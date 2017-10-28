@@ -268,4 +268,19 @@ public interface Node {
      *            The data to set on this node.
      */
     void setUserData(Object userData);
+
+    /**
+     * Remove the current node from its parent & the association it has with all its children.
+     * <p>
+     * This last type of removal makes it possible to avoid the visitor to visit children of removed nodes.
+     */
+    void remove();
+
+    /**
+     * Remove the child at the given index, if any.
+     * If not, no changes are done.
+     * @param childIndex
+     *          The index of the child to be removed
+     */
+    void removeChildAtIndex(final int childIndex);
 }
