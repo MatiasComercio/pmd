@@ -3,6 +3,7 @@ package net.sourceforge.pmd.lang.ast;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -10,6 +11,8 @@ import org.junit.Test;
  * Unit test for {@link AbstractNode}.
  */
 public class AbstractNodeTest {
+    private static final long seed = System.currentTimeMillis();
+    private static final Random random = new Random(seed);
 
     private int id;
     private Node rootNode;
@@ -128,11 +131,15 @@ public class AbstractNodeTest {
 
     /**
      * Explicitly tests the {@code removeChildAtIndex} method.
-     * This is a border case as the grand child node does not have any children.
+     * Index is chosen randomly to improve the test cases.
      */
     @Test
-    public void testRemoveRootNodeChildAtIndex1() {
+    public void testRemoveRootNodeChildAtIndex() {
+        System.out.println("Randomized with seed: " + seed);
+        final int randIndex = random.nextInt(rootNode.jjtGetNumChildren());
+
         final Node[] originalChildren = new Node[rootNode.jjtGetNumChildren()];
+
         // Check that prior conditions are OK
         for (int i = 0 ; i < originalChildren.length ; i++) {
             originalChildren[i] = rootNode.jjtGetChild(i);
@@ -144,12 +151,12 @@ public class AbstractNodeTest {
         assertEquals(numChildren, rootNode.jjtGetNumChildren());
 
         // Do the actual removal
-        rootNode.removeChildAtIndex(1);
+        rootNode.removeChildAtIndex(randIndex);
 
         // Check that conditions have been successfully changed
         assertEquals(numChildren - 1, rootNode.jjtGetNumChildren());
         for (int i = 0, j = 0 ; i < rootNode.jjtGetNumChildren() ; i++, j++) {
-            if (j == 1) { // Skip the removed child
+            if (j == randIndex) { // Skip the removed child
                 j++;
             }
             // Check that the nodes have been rightly shifted
@@ -157,5 +164,33 @@ public class AbstractNodeTest {
             // Check that the child index has been updated
             assertEquals(i, rootNode.jjtGetChild(i).jjtGetChildIndex());
         }
+    }
+
+    /**
+     * Explicitly tests the {@code removeChildAtIndex} method.
+     * Test how invalid indexes cases are handled.
+     */
+    @Test
+    public void testRemoveChildAtIndexWithInvalidIndex() {
+        // No assert as the test is considered passed if no exception is thrown
+        rootNode.removeChildAtIndex(-1);
+        rootNode.removeChildAtIndex(rootNode.jjtGetNumChildren());
+    }
+
+    /**
+     * Explicitly tests the {@code removeChildAtIndex} method.
+     * This is a border case as the method invocation should do nothing.
+     */
+    @Test
+    public void testRemoveChildAtIndexOnNodeWithNoChildren() {
+        final Node grandChild = rootNode.jjtGetChild(0).jjtGetChild(0);
+        // Check that this node does not have any children
+        assertEquals(0, grandChild.jjtGetNumChildren());
+
+        grandChild.removeChildAtIndex(0);
+
+        // If here, no exception has been thrown
+        // Check that this node still does not have any children
+        assertEquals(0, grandChild.jjtGetNumChildren());
     }
 }
