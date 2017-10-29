@@ -443,7 +443,12 @@ public abstract class AbstractNode implements Node {
     @Override
     public void removeChildAtIndex(final int childIndex) {
         if (0 <= childIndex && childIndex < jjtGetNumChildren()) {
+            // Remove the child at the given index
             children = ArrayUtils.remove(children, childIndex);
+            // Update the remaining children indexes
+            for (int i = 0 ; i < jjtGetNumChildren() ; i++) {
+                jjtGetChild(i).jjtSetChildIndex(i);
+            }
         }
     }
 }

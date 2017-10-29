@@ -1,6 +1,7 @@
 package net.sourceforge.pmd.lang.ast;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,5 +124,38 @@ public class AbstractNodeTest {
         assertEquals(numGrandChildren - 1, child.jjtGetNumChildren());
         assertEquals(0, grandChild.jjtGetNumChildren());
         assertNull(grandChild.jjtGetParent());
+    }
+
+    /**
+     * Explicitly tests the {@code removeChildAtIndex} method.
+     * This is a border case as the grand child node does not have any children.
+     */
+    @Test
+    public void testRemoveRootNodeChildAtIndex1() {
+        final Node[] originalChildren = new Node[rootNode.jjtGetNumChildren()];
+        // Check that prior conditions are OK
+        for (int i = 0 ; i < originalChildren.length ; i++) {
+            originalChildren[i] = rootNode.jjtGetChild(i);
+            assertEquals(i, originalChildren[i].jjtGetChildIndex());
+            if (i > 0) {
+                assertNotEquals(originalChildren[i-1], originalChildren[i]);
+            }
+        }
+        assertEquals(numChildren, rootNode.jjtGetNumChildren());
+
+        // Do the actual removal
+        rootNode.removeChildAtIndex(1);
+
+        // Check that conditions have been successfully changed
+        assertEquals(numChildren - 1, rootNode.jjtGetNumChildren());
+        for (int i = 0, j = 0 ; i < rootNode.jjtGetNumChildren() ; i++, j++) {
+            if (j == 1) { // Skip the removed child
+                j++;
+            }
+            // Check that the nodes have been rightly shifted
+            assertEquals(originalChildren[j], rootNode.jjtGetChild(i));
+            // Check that the child index has been updated
+            assertEquals(i, rootNode.jjtGetChild(i).jjtGetChildIndex());
+        }
     }
 }
