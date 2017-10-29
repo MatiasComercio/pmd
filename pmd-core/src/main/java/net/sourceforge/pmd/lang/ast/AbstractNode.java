@@ -422,11 +422,13 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public void remove() {
-        // Detach current node of all its children
-        for (Node child : children) {
-            child.jjtSetParent(null);
+        // Detach current node of all its children, if any
+        if (children != null) {
+            for (Node child : children) {
+                child.jjtSetParent(null);
+            }
+            children = new Node[0];
         }
-        children = new Node[0];
 
         // Detach current node of its parent, if any
         final Node parent = jjtGetParent();

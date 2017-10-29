@@ -101,4 +101,27 @@ public class AbstractNodeTest {
             assertNull(aChild.jjtGetParent());
         }
     }
+
+    /**
+     * Explicitly tests the {@code remove} method, and implicitly the {@code removeChildAtIndex} method.
+     * This is a border case as the grand child node does not have any children.
+     */
+    @Test
+    public void testRemoveGrandChildNode() {
+        final Node child = rootNode.jjtGetChild(1);
+        final Node grandChild = child.jjtGetChild(1);
+
+        // Check that the child has the expected properties
+        assertEquals(numGrandChildren, child.jjtGetNumChildren());
+        assertEquals(0, grandChild.jjtGetNumChildren());
+        assertEquals(child, grandChild.jjtGetParent());
+
+        // Do the actual removal
+        grandChild.remove();
+
+        // Check that conditions have been successfully changed
+        assertEquals(numGrandChildren - 1, child.jjtGetNumChildren());
+        assertEquals(0, grandChild.jjtGetNumChildren());
+        assertNull(grandChild.jjtGetParent());
+    }
 }
