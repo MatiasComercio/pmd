@@ -277,8 +277,8 @@ public interface Node {
     void remove();
 
     /**
-     * Remove the child at the given index, if any.
-     * If not, no changes are done.
+     * This method tells the node to remove the child node at the given index from the node's list of
+     * children, if any; if not, no changes are done.
      * @param childIndex
      *          The index of the child to be removed
      */
