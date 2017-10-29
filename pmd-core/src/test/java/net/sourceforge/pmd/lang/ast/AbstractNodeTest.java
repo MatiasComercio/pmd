@@ -3,21 +3,38 @@ package net.sourceforge.pmd.lang.ast;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.FromDataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
 
 /**
  * Unit test for {@link AbstractNode}.
  */
+@RunWith(Theories.class)
 public class AbstractNodeTest {
-    private static final long seed = System.currentTimeMillis();
-    private static final Random random = new Random(seed);
+    private static final int numChildren = 3;
+    private static final int numGrandChildren = 3;
+
+    @DataPoints("childIndexes")
+    public static final int[] childIndexes = getIntRange(numChildren);
+
+    @DataPoints("grandChildIndexes")
+    public static final int[] grandChildIndexes = getIntRange(numGrandChildren);
+
+    private static int[] getIntRange(final int exclusiveLimit) {
+        final int[] childIndexes = new int[exclusiveLimit];
+        for (int i = 0; i < exclusiveLimit; i++) {
+            childIndexes[i] = i;
+        }
+        return childIndexes;
+    }
 
     private int id;
     private Node rootNode;
-    private int numChildren;
-    private int numGrandChildren;
 
     private int nextId() {
         return id ++;
@@ -36,8 +53,6 @@ public class AbstractNodeTest {
     public void setUpSampleNodeTree() {
         id = 0;
         rootNode = newDummyNode();
-        numChildren = 3;
-        numGrandChildren = 3;
 
         for (int i = 0 ; i < numChildren ; i++) {
             final Node child = newDummyNode();
@@ -52,10 +67,11 @@ public class AbstractNodeTest {
     /**
      * Explicitly tests the {@code remove} method, and implicitly the {@code removeChildAtIndex} method
      */
-    @Test
-    public void testRemoveChildOfRootNode() {
-        final int randIndex = random.nextInt(rootNode.jjtGetNumChildren());
-        final Node child = rootNode.jjtGetChild(randIndex);
+    @Theory
+    public void testRemoveChildOfRootNode(
+        @FromDataPoints("childIndexes") int childIndex
+    ) {
+        final Node child = rootNode.jjtGetChild(childIndex);
 
         // Check that the child has the expected properties
         assertEquals(numChildren, rootNode.jjtGetNumChildren());
@@ -109,12 +125,15 @@ public class AbstractNodeTest {
 
     /**
      * Explicitly tests the {@code remove} method, and implicitly the {@code removeChildAtIndex} method.
-     * This is a border case as the grand child node does not have any children.
+     * These are border cases as grandchildren nodes do not have any child.
      */
-    @Test
-    public void testRemoveGrandChildNode() {
-        final Node child = rootNode.jjtGetChild(1);
-        final Node grandChild = child.jjtGetChild(1);
+    @Theory
+    public void testRemoveGrandChildNode(
+        @FromDataPoints("childIndexes") int childIndex,
+        @FromDataPoints("grandChildIndexes") int grandChildIndexes
+    ) {
+        final Node child = rootNode.jjtGetChild(childIndex);
+        final Node grandChild = child.jjtGetChild(grandChildIndexes);
 
         // Check that the child has the expected properties
         assertEquals(numGrandChildren, child.jjtGetNumChildren());
@@ -132,13 +151,11 @@ public class AbstractNodeTest {
 
     /**
      * Explicitly tests the {@code removeChildAtIndex} method.
-     * Index is chosen randomly to improve the test cases.
      */
-    @Test
-    public void testRemoveRootNodeChildAtIndex() {
-        System.out.println("Randomized with seed: " + seed);
-        final int randIndex = random.nextInt(rootNode.jjtGetNumChildren());
-
+    @Theory
+    public void testRemoveRootNodeChildAtIndex(
+        @FromDataPoints("childIndexes") int childIndex
+    ) {
         final Node[] originalChildren = new Node[rootNode.jjtGetNumChildren()];
 
         // Check that prior conditions are OK
@@ -152,12 +169,12 @@ public class AbstractNodeTest {
         assertEquals(numChildren, rootNode.jjtGetNumChildren());
 
         // Do the actual removal
-        rootNode.removeChildAtIndex(randIndex);
+        rootNode.removeChildAtIndex(childIndex);
 
         // Check that conditions have been successfully changed
         assertEquals(numChildren - 1, rootNode.jjtGetNumChildren());
         for (int i = 0, j = 0 ; i < rootNode.jjtGetNumChildren() ; i++, j++) {
-            if (j == randIndex) { // Skip the removed child
+            if (j == childIndex) { // Skip the removed child
                 j++;
             }
             // Check that the nodes have been rightly shifted
