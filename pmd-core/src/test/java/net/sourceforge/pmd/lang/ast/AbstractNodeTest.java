@@ -53,29 +53,30 @@ public class AbstractNodeTest {
      * Explicitly tests the {@code remove} method, and implicitly the {@code removeChildAtIndex} method
      */
     @Test
-    public void testRemoveSecondChildOfRootNode() {
-        final Node secondChild = rootNode.jjtGetChild(1);
+    public void testRemoveChildOfRootNode() {
+        final int randIndex = random.nextInt(rootNode.jjtGetNumChildren());
+        final Node child = rootNode.jjtGetChild(randIndex);
 
         // Check that the child has the expected properties
         assertEquals(numChildren, rootNode.jjtGetNumChildren());
-        assertEquals(rootNode, secondChild.jjtGetParent());
-        assertEquals(numGrandChildren, secondChild.jjtGetNumChildren());
-        final Node[] secondChildChildren = new Node[secondChild.jjtGetNumChildren()];
-        for (int i = 0; i < secondChildChildren.length; i++) {
-            final Node secondChildChild = secondChild.jjtGetChild(i);
-            secondChildChildren[i] = secondChildChild;
-            assertEquals(secondChild, secondChildChild.jjtGetParent());
+        assertEquals(rootNode, child.jjtGetParent());
+        assertEquals(numGrandChildren, child.jjtGetNumChildren());
+        final Node[] grandChildren = new Node[child.jjtGetNumChildren()];
+        for (int i = 0; i < grandChildren.length; i++) {
+            final Node grandChild = child.jjtGetChild(i);
+            grandChildren[i] = grandChild;
+            assertEquals(child, grandChild.jjtGetParent());
         }
 
         // Do the actual removal
-        secondChild.remove();
+        child.remove();
 
         // Check that conditions have been successfully changed
         assertEquals(numChildren - 1, rootNode.jjtGetNumChildren());
-        assertNull(secondChild.jjtGetParent());
-        assertEquals(0, secondChild.jjtGetNumChildren());
-        for (final Node aSecondChildChildren : secondChildChildren) {
-            assertNull(aSecondChildChildren.jjtGetParent());
+        assertNull(child.jjtGetParent());
+        assertEquals(0, child.jjtGetNumChildren());
+        for (final Node grandChild : grandChildren) {
+            assertNull(grandChild.jjtGetParent());
         }
     }
 
