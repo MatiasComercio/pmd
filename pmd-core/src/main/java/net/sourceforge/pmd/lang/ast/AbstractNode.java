@@ -19,6 +19,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import net.sourceforge.pmd.autofix.RewritableNode;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorder;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorderImpl;
 import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
@@ -39,10 +42,12 @@ public abstract class AbstractNode implements RewritableNode {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
+    private RewriteEventsRecorder rewriteEventsRecorder;
     private AST ast; // xnow: TODO somewhere (idea: visitor right before RuleSets.apply execution)
 
     public AbstractNode(int id) {
         this.id = id;
+        this.rewriteEventsRecorder = new RewriteEventsRecorderImpl();
     }
 
     public AbstractNode(int id, int theBeginLine, int theEndLine, int theBeginColumn, int theEndColumn) {
@@ -441,7 +446,7 @@ public abstract class AbstractNode implements RewritableNode {
         oldChild.jjtSetParent(null);
 
         // Finally, report the remove event
-        // removeChildEvent(this, oldChild, index); // TODO [autofix]
+        removeChildEvent(this, oldChild, index);
     }
 
     /**
@@ -494,8 +499,7 @@ public abstract class AbstractNode implements RewritableNode {
         newChild.jjtSetChildIndex(insertionIndex);
         newChild.jjtSetParent(this);
         // Finally, report the insert event
-        // This may be outside this scope, just to avoid calling it when using the jjtAddChild (just call it when rewriting indeed)
-        // insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
+        insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
         return insertionIndex;
     }
 
@@ -519,5 +523,28 @@ public abstract class AbstractNode implements RewritableNode {
         for (int i = index + 1; i < jjtGetNumChildren(); i++) {
             jjtGetChild(i).jjtSetChildIndex(i);
         }
+    }
+
+    private void removeChildEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
+        rewriteEventsRecorder.recordRemove(parentNode, oldChildNode, childIndex);
+    }
+
+    private void insertChildEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
+        rewriteEventsRecorder.recordInsert(parentNode, newChildNode, childIndex);
+    }
+
+    private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
+                                   final Node newChildNode, final int childIndex) {
+        rewriteEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
+    }
+
+    @Override
+    public boolean haveChildrenChanged() {
+        return rewriteEventsRecorder.hasRewriteEvents();
+    }
+
+    @Override
+    public RewriteEvent[] getChildrenRewriteEvents() {
+        return rewriteEventsRecorder.getRewriteEvents();
     }
 }
