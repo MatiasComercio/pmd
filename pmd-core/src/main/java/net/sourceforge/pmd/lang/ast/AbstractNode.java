@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorder;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jaxen.BaseXPath;
 import org.jaxen.JaxenException;
@@ -39,6 +40,7 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
+    private NodeEventsRecorder nodeEventsRecorder; // xnow: should be initialized somewere/somehow
 
     public AbstractNode(int id) {
         this.id = id;
@@ -512,4 +514,21 @@ public abstract class AbstractNode implements Node {
             jjtGetChild(i).jjtSetChildIndex(i);
         }
     }
+
+    // xnow document
+    private void removeChildEvent(final Node parentNode, final int childIndex, final Node oldChildNode) {
+        nodeEventsRecorder.recordRemove(parentNode, childIndex, oldChildNode);
+    }
+
+    // xnow document
+    private void addChildEvent(final Node parentNode, final int childIndex, final Node newChildNode) {
+        nodeEventsRecorder.recordInsert(parentNode, childIndex, newChildNode);
+    }
+
+    // xnow document
+    private void replaceChildEvent(final Node parentNode, final int childIndex, final Node oldChildNode, final Node newChildNode) {
+        nodeEventsRecorder.recordReplace(parentNode, childIndex, oldChildNode, newChildNode);
+    }
+
+    // xnow: check if we should implement equals & hashcode (think we do) for recording node events
 }
