@@ -13,7 +13,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorder;
+import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorderImpl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jaxen.BaseXPath;
 import org.jaxen.JaxenException;
@@ -40,7 +40,7 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private NodeEventsRecorder nodeEventsRecorder; // xnow: should be initialized somewere/somehow
+    private NodeEventsRecorderImpl nodeEventsRecorder; // xnow: should be initialized somewere/somehow
 
     public AbstractNode(int id) {
         this.id = id;
@@ -451,7 +451,7 @@ public abstract class AbstractNode implements Node {
         oldChild.jjtSetParent(null);
 
         // Finally, report the remove event
-        // removeChildEvent(this, oldChild, index); // TODO [autofix]
+         removeChildEvent(this, oldChild, index); // TODO [autofix]
     }
 
     @Override
@@ -469,7 +469,7 @@ public abstract class AbstractNode implements Node {
         newChild.jjtSetChildIndex(insertionIndex);
         newChild.jjtSetParent(this);
         // Finally, report the insert event
-        // insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
+         insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
         return insertionIndex;
     }
 
@@ -490,7 +490,7 @@ public abstract class AbstractNode implements Node {
         // Detach old child node of its parent
         oldChild.jjtSetParent(null);
         // Finally, report the replace event
-        // replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
+         replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
     }
 
     private void makeSpaceForNewChild(final int index) {
@@ -515,18 +515,16 @@ public abstract class AbstractNode implements Node {
         }
     }
 
-    // xnow document
-    private void removeChildEvent(final Node parentNode, final int childIndex, final Node oldChildNode) {
+    private void removeChildEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
         nodeEventsRecorder.recordRemove(parentNode, childIndex, oldChildNode);
     }
 
-    // xnow document
-    private void addChildEvent(final Node parentNode, final int childIndex, final Node newChildNode) {
+    private void insertChildEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
         nodeEventsRecorder.recordInsert(parentNode, childIndex, newChildNode);
     }
 
-    // xnow document
-    private void replaceChildEvent(final Node parentNode, final int childIndex, final Node oldChildNode, final Node newChildNode) {
+    private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
+                                   final Node newChildNode, final int childIndex) {
         nodeEventsRecorder.recordReplace(parentNode, childIndex, oldChildNode, newChildNode);
     }
 
