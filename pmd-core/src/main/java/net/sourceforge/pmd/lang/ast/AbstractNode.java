@@ -40,10 +40,11 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private NodeEventsRecorderImpl nodeEventsRecorder; // xnow: should be initialized somewere/somehow
+    private NodeEventsRecorderImpl nodeEventsRecorder; // xnow document
 
     public AbstractNode(int id) {
         this.id = id;
+        this.nodeEventsRecorder = new NodeEventsRecorderImpl();
     }
 
     public AbstractNode(int id, int theBeginLine, int theEndLine, int theBeginColumn, int theEndColumn) {
@@ -527,6 +528,4 @@ public abstract class AbstractNode implements Node {
                                    final Node newChildNode, final int childIndex) {
         nodeEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
     }
-
-    // xnow: check if we should implement equals & hashcode (think we do) for recording node events
 }

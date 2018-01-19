@@ -13,8 +13,7 @@ public abstract class NodeEventsMergers {
     private static final NodeEventsMerger INSERT_NEW_NODE_EVENT_MERGER = new NodeEventsMerger() {
         @Override
         public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            nodeEvents[childIndex] = newNodeEvent;
-            return nodeEvents;
+            return ArrayUtils.insert(childIndex, nodeEvents, newNodeEvent);
         }
     };
 
