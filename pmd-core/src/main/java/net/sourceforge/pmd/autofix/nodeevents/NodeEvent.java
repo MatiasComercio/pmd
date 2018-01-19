@@ -6,13 +6,12 @@ package net.sourceforge.pmd.autofix.nodeevents;
 
 import net.sourceforge.pmd.lang.ast.Node;
 
-public class NodeEvent { // xnow
+public class NodeEvent {
     private final NodeEventType nodeEventType;
     private final Node parentNode;
     private final Node oldChildNode;
     private final Node newChildNode;
     private final int childNodeIndex;
-
 
     public NodeEvent(final NodeEventType nodeEventType,
                      final Node parentNode,
