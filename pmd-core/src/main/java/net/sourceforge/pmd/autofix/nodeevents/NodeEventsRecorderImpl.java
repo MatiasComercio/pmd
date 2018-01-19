@@ -38,7 +38,7 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
             throw new IllegalArgumentException(msg);
         }
 
-        recordNodeEvent(createRemoveNodeEvent(parentNode, childIndex, oldChildNode));
+        recordMergedNodeEvents(createRemoveNodeEvent(parentNode, childIndex, oldChildNode));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
             throw new IllegalArgumentException(msg);
         }
 
-        recordNodeEvent(createInsertNodeEvent(parentNode, childIndex, newChildNode));
+        recordMergedNodeEvents(createInsertNodeEvent(parentNode, childIndex, newChildNode));
     }
 
     @Override
@@ -66,10 +66,10 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
             throw new IllegalArgumentException(msg);
         }
 
-        recordNodeEvent(createReplaceNodeEvent(parentNode, childIndex, oldChildNode, newChildNode));
+        recordMergedNodeEvents(createReplaceNodeEvent(parentNode, childIndex, oldChildNode, newChildNode));
     }
 
-    private void recordNodeEvent(final NodeEvent nodeEvent) {
+    private void recordMergedNodeEvents(final NodeEvent nodeEvent) {
         final Node parentNode = nodeEvent.getParentNode();
         final int childIndex = nodeEvent.getChildNodeIndex();
         List<NodeEvent> nodeEvents = nodeEventsPerNode.get(parentNode);
@@ -82,61 +82,15 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
         if (oldNodeEvent == null) {
             nodeEvents.set(childIndex, nodeEvent); // set == add in this case
         } else {
-            recordNodeEvent(childIndex, nodeEvents, oldNodeEvent, nodeEvent);
+            recordMergedNodeEvents(childIndex, nodeEvents, oldNodeEvent, nodeEvent);
         }
     }
 
-
-
-    private void recordNodeEvent(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+    private void recordMergedNodeEvents(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
         final NodeEventType oldNodeEventType = oldNodeEvent.getNodeEventType();
         final NodeEventType newNodeEventType = newNodeEvent.getNodeEventType();
-        final NodeEventsMergerMapper nodeEventsMerger = getNodeEventsMerger(oldNodeEventType, newNodeEventType);
-        nodeEventsMerger.recordMerge(nodeEvents, childIndex);
-
-
-        final NodeEvent mergedNodeEvent;
-
-
-        switch (oldNodeEventType) {
-        case INSERT:
-            switch (newNodeEventType) {
-            case INSERT:
-                nodeEvents.add(childIndex, newNodeEvent);
-                break;
-            case REPLACE:
-                mergedNodeEvent = createInsertNodeEvent(newNodeEvent.getParentNode(), childIndex, newNodeEvent.getNewChildNode());
-                nodeEvents.set(childIndex, mergedNodeEvent);
-                break;
-            case REMOVE:
-                nodeEvents.remove(childIndex);
-                break;
-            }
-            break;
-        case REPLACE:
-            switch (newNodeEventType) {
-            case INSERT:
-                nodeEvents.add(childIndex, newNodeEvent);
-                break;
-            case REPLACE:
-                mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
-                nodeEvents.set(childIndex, mergedNodeEvent);
-                break;
-            case REMOVE:
-                mergedNodeEvent = createRemoveNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode());
-                nodeEvents.set(childIndex, mergedNodeEvent);
-                break;
-            }
-        case REMOVE:
-            switch (newNodeEventType) {
-            case INSERT:
-                mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
-                nodeEvents.set(childIndex, mergedNodeEvent);
-                break;
-            case REPLACE: case REMOVE:
-                throw new IllegalStateException("Cannot replace or remove an already removed node");
-            }
-        }
+        final NodeEventsMerger nodeEventsMerger = NodeEventsMergers.getNodeEventsMerger(oldNodeEventType, newNodeEventType);
+        nodeEventsMerger.recordMerge(childIndex, nodeEvents, oldNodeEvent, newNodeEvent);
     }
 
     private static NodeEvent createInsertNodeEvent(final Node parentNode, final int childIndex, final Node newChildNode) {
@@ -149,21 +103,22 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
         return new NodeEvent(NodeEventType.REPLACE, parentNode, oldChildNode, newChildNode, childIndex);
     }
 
-    private static final NodeEventsMerger INSERT_NEW_NODE_EVENT_MERGER = new NodeEventsMerger() {
-        @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            nodeEvents.add(childIndex, newNodeEvent);
-        }
-    };
+    private static abstract class NodeEventsMergers {
+        private static final NodeEventsMerger INSERT_NEW_NODE_EVENTS_MERGER = new NodeEventsMerger() {
+            @Override
+            public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+                nodeEvents.add(childIndex, newNodeEvent);
+            }
+        };
 
-    private static final NodeEventsMerger REMOVE_ORIGINAL_NODE_EVENT_MERGER = new NodeEventsMerger() {
-        @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            nodeEvents.remove(childIndex);
-        }
-    };
+        private static final NodeEventsMerger REMOVE_ORIGINAL_NODE_EVENTS_MERGER = new NodeEventsMerger() {
+            @Override
+            public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+                nodeEvents.remove(childIndex);
+            }
+        };
 
-    private static final NodeEventsMerger  INSERT_NODE_EVENT_MERGER = new NodeEventsMerger() {
+        private static final NodeEventsMerger INSERT_NODE_EVENTS_MERGER = new NodeEventsMerger() {
             @Override
             public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
                 final NodeEvent mergedNodeEvent = createInsertNodeEvent(newNodeEvent.getParentNode(), childIndex, newNodeEvent.getNewChildNode());
@@ -171,61 +126,66 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
             }
         };
 
-    private static final NodeEventsMerger REPLACE_NODE_EVENT_MERGER = new NodeEventsMerger() {
-        @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            final NodeEvent mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
-            nodeEvents.set(childIndex, mergedNodeEvent);
+        private static final NodeEventsMerger REPLACE_NODE_EVENTS_MERGER = new NodeEventsMerger() {
+            @Override
+            public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+                final NodeEvent mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+            }
+        };
+
+        private static final NodeEventsMerger REMOVE_NODE_EVENTS_MERGER = new NodeEventsMerger() {
+            @Override
+            public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+                final NodeEvent mergedNodeEvent = createRemoveNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+            }
+        };
+
+        private static final NodeEventsMerger INVALID_MERGER = new NodeEventsMerger() {
+            @Override
+            public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+                final String msg = String.format("Cannot merge events: <%s> -> <%s>", oldNodeEvent.getNodeEventType(), newNodeEvent.getNodeEventType());
+                throw new IllegalStateException(msg);
+            }
+        };
+
+        private static final NodeEventsMerger[][] NODE_EVENTS_MERGERS;
+        static {
+            final int size = NodeEventType.values().length;
+            NODE_EVENTS_MERGERS = new NodeEventsMerger[size][size];
+            final int iInsert = INSERT.getIndex();
+            final int iRemove = REMOVE.getIndex();
+            final int iReplace = REPLACE.getIndex();
+
+            // Insert -> Insert = 2 Inserts
+            NODE_EVENTS_MERGERS[iInsert][iInsert] = INSERT_NEW_NODE_EVENTS_MERGER;
+
+            // Insert -> Replace = Insert, with the newNodeEvent of the replace event
+            NODE_EVENTS_MERGERS[iInsert][iReplace] = INSERT_NODE_EVENTS_MERGER;
+
+            // Insert -> Remove = delete the original insert event
+            NODE_EVENTS_MERGERS[iInsert][iRemove] = REMOVE_ORIGINAL_NODE_EVENTS_MERGER;
+
+            // Replace -> Insert = Replace & Insert are kept
+            NODE_EVENTS_MERGERS[iReplace][iInsert] = INSERT_NEW_NODE_EVENTS_MERGER;
+
+            // Replace -> Replace = Replace, with the oldNodeEvent of the original replace and the newNodeEvent of the new replace
+            NODE_EVENTS_MERGERS[iReplace][iReplace] = REPLACE_NODE_EVENTS_MERGER;
+
+            // Replace -> Remove = Remove, with the oldNodeEvent of the original replace
+            NODE_EVENTS_MERGERS[iReplace][iRemove] = REMOVE_NODE_EVENTS_MERGER;
+
+            // Remove -> Insert = Replace, with the oldNodeEvent of the remove and the newNodeEvent of the insert
+            NODE_EVENTS_MERGERS[iRemove][iInsert] = REPLACE_NODE_EVENTS_MERGER;
+
+            // Cannot replace or remove an already removed node
+            NODE_EVENTS_MERGERS[iRemove][iReplace] = INVALID_MERGER;
+            NODE_EVENTS_MERGERS[iRemove][iRemove] = INVALID_MERGER;
         }
-    };
 
-    private static final NodeEventsMerger REMOVE_NODE_EVENT_MERGER = new NodeEventsMerger() {
-        @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            final NodeEvent mergedNodeEvent = createRemoveNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode());
-            nodeEvents.set(childIndex, mergedNodeEvent);
+        public static NodeEventsMerger getNodeEventsMerger(final NodeEventType oldEventType, final NodeEventType newEventType) {
+            return NODE_EVENTS_MERGERS[oldEventType.getIndex()][newEventType.getIndex()];
         }
-    };
-
-    private static final NodeEventsMerger INVALID_MERGER = new NodeEventsMerger() {
-        @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            final String msg = String.format("Cannot merge events: <%s> -> <%s>", oldNodeEvent.getNodeEventType(), newNodeEvent.getNodeEventType());
-            throw new IllegalStateException(msg);
-        }
-    };
-
-    private static final NodeEventsMerger[][] NODE_EVENTS_MERGERS;
-    static {
-        final int size = NodeEventType.values().length;
-        NODE_EVENTS_MERGERS = new NodeEventsMerger[size][size];
-        final int iInsert = INSERT.getIndex();
-        final int iRemove = REMOVE.getIndex();
-        final int iReplace = REPLACE.getIndex();
-
-        // Insert -> Insert = 2 Inserts
-        NODE_EVENTS_MERGERS[iInsert][iInsert] = INSERT_NEW_NODE_EVENT_MERGER;
-
-        // Insert -> Replace = Insert, with the newNodeEvent of the replace event
-        NODE_EVENTS_MERGERS[iInsert][iReplace] = INSERT_NODE_EVENT_MERGER;
-
-        // Insert -> Remove = delete the original insert event
-        NODE_EVENTS_MERGERS[iInsert][iRemove] = REMOVE_ORIGINAL_NODE_EVENT_MERGER;
-
-        // Replace -> Insert = Replace & Insert are kept
-        NODE_EVENTS_MERGERS[iReplace][iInsert] = INSERT_NEW_NODE_EVENT_MERGER;
-
-        // Replace -> Replace = Replace, with the oldNodeEvent of the original replace and the newNodeEvent of the new replace
-        NODE_EVENTS_MERGERS[iReplace][iReplace] = REPLACE_NODE_EVENT_MERGER;
-
-        // Replace -> Remove = Remove, with the oldNodeEvent of the original replace
-        NODE_EVENTS_MERGERS[iReplace][iRemove] = REMOVE_NODE_EVENT_MERGER;
-
-        // Remove -> Insert = Replace, with the oldNodeEvent of the remove and the newNodeEvent of the insert
-        NODE_EVENTS_MERGERS[iRemove][iInsert] = REPLACE_NODE_EVENT_MERGER;
-
-        // Cannot replace or remove an already removed node
-        NODE_EVENTS_MERGERS[iRemove][iReplace] = INVALID_MERGER;
-        NODE_EVENTS_MERGERS[iRemove][iRemove] = INVALID_MERGER;
     }
 }
