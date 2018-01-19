@@ -4,10 +4,6 @@
 
 package net.sourceforge.pmd.autofix.nodeevents;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 
@@ -17,11 +13,7 @@ import net.sourceforge.pmd.lang.ast.Node;
 public class NodeEventsRecorderImpl implements NodeEventsRecorder {
     // xnow: document
     // List of node events is ordered based on the child index for the parent node, so, only one node event is recorded for each child of a parent node
-    private final Map<Node, List<NodeEvent>> nodeEventsPerNode;
-
-    public NodeEventsRecorderImpl() {
-        this.nodeEventsPerNode = new HashMap<>();
-    }
+    private NodeEvent[] nodeEvents;
 
     @Override
     public void recordRemove(final Node parentNode, final Node oldChildNode, final int childIndex) {
@@ -58,28 +50,29 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
     }
 
     private void recordNodeEvents(final NodeEvent nodeEvent) {
-        final Node parentNode = nodeEvent.getParentNode();
         final int childIndex = nodeEvent.getChildNodeIndex();
-        List<NodeEvent> nodeEvents = nodeEventsPerNode.get(parentNode);
         if (nodeEvents == null) {
-            // Create an array list of at least the child index size
-            nodeEvents = new ArrayList<>( childIndex + 1);
-            nodeEventsPerNode.put(parentNode, nodeEvents);
+            nodeEvents = new NodeEvent[childIndex + 1];
+        } else if (childIndex >= nodeEvents.length) {
+            final NodeEvent[] newNodeEvents = new NodeEvent[childIndex + 1];
+            System.arraycopy(nodeEvents, 0,newNodeEvents, 0, nodeEvents.length);
+            nodeEvents = newNodeEvents;
         }
-        final NodeEvent oldNodeEvent = childIndex >= nodeEvents.size() ? null : nodeEvents.get(childIndex);
+
+        final NodeEvent oldNodeEvent = nodeEvents[childIndex];
         if (oldNodeEvent == null) { // This is the first event for this child index
-            nodeEvents.set(childIndex, nodeEvent); // set == add in this case, as there is nothing at this index
+            nodeEvents[childIndex] = nodeEvent;
         } else {
             // There is a previous event for the given index => we have to merge the old node event
             //  with the new one before recording the given event
-            recordMergedNodeEvents(childIndex, nodeEvents, oldNodeEvent, nodeEvent);
+            nodeEvents = recordMergedNodeEvents(nodeEvents, childIndex, oldNodeEvent, nodeEvent);
         }
     }
 
-    private void recordMergedNodeEvents(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+    private NodeEvent[] recordMergedNodeEvents(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
         final NodeEventType oldNodeEventType = oldNodeEvent.getNodeEventType();
         final NodeEventType newNodeEventType = newNodeEvent.getNodeEventType();
         final NodeEventsMerger nodeEventsMerger = NodeEventsMergers.getNodeEventsMerger(oldNodeEventType, newNodeEventType);
-        nodeEventsMerger.recordMerge(childIndex, nodeEvents, oldNodeEvent, newNodeEvent);
+        return nodeEventsMerger.recordMerge(nodeEvents, childIndex, oldNodeEvent, newNodeEvent);
     }
 }

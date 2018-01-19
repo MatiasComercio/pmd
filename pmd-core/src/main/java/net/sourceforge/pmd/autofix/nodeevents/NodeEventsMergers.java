@@ -1,6 +1,7 @@
 package net.sourceforge.pmd.autofix.nodeevents;
 
 import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 import static net.sourceforge.pmd.autofix.nodeevents.NodeEventFactory.createInsertNodeEvent;
 import static net.sourceforge.pmd.autofix.nodeevents.NodeEventFactory.createRemoveNodeEvent;
 import static net.sourceforge.pmd.autofix.nodeevents.NodeEventFactory.createReplaceNodeEvent;
@@ -11,45 +12,49 @@ import static net.sourceforge.pmd.autofix.nodeevents.NodeEventType.REPLACE;
 public abstract class NodeEventsMergers {
     private static final NodeEventsMerger INSERT_NEW_NODE_EVENT_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            nodeEvents.add(childIndex, newNodeEvent);
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+            nodeEvents[childIndex] = newNodeEvent;
+            return nodeEvents;
         }
     };
 
     private static final NodeEventsMerger REMOVE_ORIGINAL_NODE_EVENT_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
-            nodeEvents.remove(childIndex);
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+            return ArrayUtils.remove(nodeEvents, childIndex);
         }
     };
 
     private static final NodeEventsMerger INSERT_NODE_EVENTS_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
             final NodeEvent mergedNodeEvent = createInsertNodeEvent(newNodeEvent.getParentNode(), childIndex, newNodeEvent.getNewChildNode());
-            nodeEvents.set(childIndex, mergedNodeEvent);
+            nodeEvents[childIndex] = mergedNodeEvent;
+            return nodeEvents;
         }
     };
 
     private static final NodeEventsMerger REPLACE_NODE_EVENTS_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
             final NodeEvent mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
-            nodeEvents.set(childIndex, mergedNodeEvent);
+            nodeEvents[childIndex] = mergedNodeEvent;
+            return nodeEvents;
         }
     };
 
     private static final NodeEventsMerger REMOVE_NODE_EVENTS_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
             final NodeEvent mergedNodeEvent = createRemoveNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode());
-            nodeEvents.set(childIndex, mergedNodeEvent);
+            nodeEvents[childIndex] = mergedNodeEvent;
+            return nodeEvents;
         }
     };
 
     private static final NodeEventsMerger INVALID_MERGER = new NodeEventsMerger() {
         @Override
-        public void recordMerge(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+        public NodeEvent[] recordMerge(final NodeEvent[] nodeEvents, final int childIndex, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
             final String msg = String.format("Cannot merge events: <%s> -> <%s>", oldNodeEvent.getNodeEventType(), newNodeEvent.getNodeEventType());
             throw new IllegalStateException(msg);
         }
