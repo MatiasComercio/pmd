@@ -451,7 +451,7 @@ public abstract class AbstractNode implements Node {
         oldChild.jjtSetParent(null);
 
         // Finally, report the remove event
-         removeChildEvent(this, oldChild, index); // TODO [autofix]
+        removeChildEvent(this, oldChild, index);
     }
 
     @Override
@@ -469,7 +469,7 @@ public abstract class AbstractNode implements Node {
         newChild.jjtSetChildIndex(insertionIndex);
         newChild.jjtSetParent(this);
         // Finally, report the insert event
-         insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
+        insertChildEvent(this, newChild, insertionIndex);
         return insertionIndex;
     }
 
@@ -490,7 +490,7 @@ public abstract class AbstractNode implements Node {
         // Detach old child node of its parent
         oldChild.jjtSetParent(null);
         // Finally, report the replace event
-         replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
+        replaceChildEvent(this, oldChild, newChild, index);
     }
 
     private void makeSpaceForNewChild(final int index) {
@@ -516,16 +516,16 @@ public abstract class AbstractNode implements Node {
     }
 
     private void removeChildEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
-        nodeEventsRecorder.recordRemove(parentNode, childIndex, oldChildNode);
+        nodeEventsRecorder.recordRemove(parentNode, oldChildNode, childIndex);
     }
 
     private void insertChildEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
-        nodeEventsRecorder.recordInsert(parentNode, childIndex, newChildNode);
+        nodeEventsRecorder.recordInsert(parentNode, newChildNode, childIndex);
     }
 
     private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
                                    final Node newChildNode, final int childIndex) {
-        nodeEventsRecorder.recordReplace(parentNode, childIndex, oldChildNode, newChildNode);
+        nodeEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
     }
 
     // xnow: check if we should implement equals & hashcode (think we do) for recording node events

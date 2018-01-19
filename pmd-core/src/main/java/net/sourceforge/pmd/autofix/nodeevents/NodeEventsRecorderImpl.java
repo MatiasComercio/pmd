@@ -72,10 +72,62 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
         List<NodeEvent> nodeEvents = nodeEventsPerNode.get(parentNode);
         if (nodeEvents == null) {
             // Create an array list of at least the child index size
-            nodeEvents = new ArrayList<>( 1);
+            nodeEvents = new ArrayList<>( childIndex + 1);
             nodeEventsPerNode.put(parentNode, nodeEvents);
         }
-        nodeEvents.add(childIndex, nodeEvent);
+        final NodeEvent oldNodeEvent = childIndex >= nodeEvents.size() ? null : nodeEvents.get(childIndex);
+        recordNodeEvent(childIndex, nodeEvents, oldNodeEvent, nodeEvent);
+    }
+
+    private void recordNodeEvent(final int childIndex, final List<NodeEvent> nodeEvents, final NodeEvent oldNodeEvent, final NodeEvent newNodeEvent) {
+        if (oldNodeEvent == null) {
+//            recordNewNodeEvent(newNodeEvent);
+            nodeEvents.set(childIndex, newNodeEvent); // set == add in this case
+            return;
+        }
+
+        final NodeEventType oldNodeEventType = oldNodeEvent.getNodeEventType();
+        final NodeEventType newNodeEventType = newNodeEvent.getNodeEventType();
+        NodeEvent mergedNodeEvent;
+        switch (oldNodeEventType) {
+        case INSERT:
+            switch (newNodeEventType) {
+            case INSERT:
+                nodeEvents.add(childIndex, newNodeEvent);
+                break;
+            case REPLACE:
+                mergedNodeEvent = createInsertNodeEvent(newNodeEvent.getParentNode(), childIndex, newNodeEvent.getNewChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+                break;
+            case REMOVE:
+                nodeEvents.remove(childIndex);
+                break;
+            }
+            break;
+        case REPLACE:
+            switch (newNodeEventType) {
+            case INSERT:
+                nodeEvents.add(childIndex, newNodeEvent);
+                break;
+            case REPLACE:
+                mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+                break;
+            case REMOVE:
+                mergedNodeEvent = createRemoveNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+                break;
+            }
+        case REMOVE:
+            switch (newNodeEventType) {
+            case INSERT:
+                mergedNodeEvent = createReplaceNodeEvent(newNodeEvent.getParentNode(), childIndex, oldNodeEvent.getOldChildNode(), newNodeEvent.getNewChildNode());
+                nodeEvents.set(childIndex, mergedNodeEvent);
+                break;
+            case REPLACE: case REMOVE:
+                throw new IllegalStateException("Cannot replace or remove an already removed node");
+            }
+        }
     }
 
     private NodeEvent createInsertNodeEvent(final Node parentNode, final int childIndex, final Node newChildNode) {

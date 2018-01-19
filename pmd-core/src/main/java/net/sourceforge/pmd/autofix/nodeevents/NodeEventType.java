@@ -5,5 +5,15 @@
 package net.sourceforge.pmd.autofix.nodeevents;
 
 public enum NodeEventType {
-    INSERT, REMOVE, REPLACE
+    INSERT(0), REMOVE(1), REPLACE(2);
+
+    private final int index;
+
+    NodeEventType(final int index) {
+        this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
+    }
 }
