@@ -9,64 +9,55 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Logger;
 import net.sourceforge.pmd.lang.ast.Node;
 
 /**
  * xnow document
  */
 public class NodeEventsRecorderImpl implements NodeEventsRecorder {
-    private static final Logger LOGGER = Logger.getLogger(NodeEventsRecorderImpl.class.getName());
-
     // xnow: document
     // List of node events is ordered based on the child index for the parent node, so, only one node event is recorded for each child of a parent node
     private final Map<Node, List<NodeEvent>> nodeEventsPerNode;
 
     public NodeEventsRecorderImpl() {
-        this.nodeEventsPerNode = new HashMap<>(); // xnow: perhaps making this class a singleton and calling startRecording/endRecording, which will set/clear this variable
+        this.nodeEventsPerNode = new HashMap<>();
     }
 
     @Override
     public void recordRemove(final Node parentNode, final Node oldChildNode, final int childIndex) {
-        if (parentNode == null || childIndex < 0 || oldChildNode == null) {
-            final String msg = String.format("parentNode <%s> is null " +
-                "or childIndex <%d> is lower than 0" +
-                "or oldChildNode <%s> is null", parentNode, childIndex, oldChildNode);
-            throw new IllegalArgumentException(msg);
-        }
+        Objects.requireNonNull(parentNode);
+        Objects.requireNonNull(oldChildNode);
+        validateNonNullIndex(childIndex);
 
-        recordMergedNodeEvents(NodeEventFactory.createRemoveNodeEvent(parentNode, childIndex, oldChildNode));
+        recordNodeEvents(NodeEventFactory.createRemoveNodeEvent(parentNode, childIndex, oldChildNode));
     }
 
     @Override
     public void recordInsert(final Node parentNode, final Node newChildNode, final int childIndex) {
         Objects.requireNonNull(parentNode);
         Objects.requireNonNull(newChildNode);
+        validateNonNullIndex(childIndex);
 
-        if (childIndex < 0) { // TODO: doing
-            final String msg = String.format("parentNode <%s> is null " +
-                "or childIndex <%d> is lower than 0" +
-                "or newChildNode <%s> is null", parentNode, childIndex, newChildNode);
-            throw new IllegalArgumentException(msg);
-        }
-
-        recordMergedNodeEvents(NodeEventFactory.createInsertNodeEvent(parentNode, childIndex, newChildNode));
+        recordNodeEvents(NodeEventFactory.createInsertNodeEvent(parentNode, childIndex, newChildNode));
     }
 
     @Override
     public void recordReplace(final Node parentNode, final Node oldChildNode, final Node newChildNode, final int childIndex) {
-        if (parentNode == null || childIndex < 0 || oldChildNode == null || newChildNode == null) {
-            final String msg = String.format("parentNode <%s> is null " +
-                "or childIndex <%d> is lower than 0 " +
-                "or oldChildNode <%s> is null " +
-                "or newChildNode <%s> is null", parentNode, childIndex, oldChildNode, newChildNode);
-            throw new IllegalArgumentException(msg);
-        }
+        Objects.requireNonNull(parentNode);
+        Objects.requireNonNull(oldChildNode);
+        Objects.requireNonNull(newChildNode);
+        validateNonNullIndex(childIndex);
 
-        recordMergedNodeEvents(NodeEventFactory.createReplaceNodeEvent(parentNode, childIndex, oldChildNode, newChildNode));
+        recordNodeEvents(NodeEventFactory.createReplaceNodeEvent(parentNode, childIndex, oldChildNode, newChildNode));
     }
 
-    private void recordMergedNodeEvents(final NodeEvent nodeEvent) {
+    private void validateNonNullIndex(final int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException(String.format("index <%d> is lower than 0", index));
+        }
+    }
+
+    private void recordNodeEvents(final NodeEvent nodeEvent) {
         final Node parentNode = nodeEvent.getParentNode();
         final int childIndex = nodeEvent.getChildNodeIndex();
         List<NodeEvent> nodeEvents = nodeEventsPerNode.get(parentNode);
@@ -76,9 +67,11 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
             nodeEventsPerNode.put(parentNode, nodeEvents);
         }
         final NodeEvent oldNodeEvent = childIndex >= nodeEvents.size() ? null : nodeEvents.get(childIndex);
-        if (oldNodeEvent == null) {
-            nodeEvents.set(childIndex, nodeEvent); // set == add in this case
+        if (oldNodeEvent == null) { // This is the first event for this child index
+            nodeEvents.set(childIndex, nodeEvent); // set == add in this case, as there is nothing at this index
         } else {
+            // There is a previous event for the given index => we have to merge the old node event
+            //  with the new one before recording the given event
             recordMergedNodeEvents(childIndex, nodeEvents, oldNodeEvent, nodeEvent);
         }
     }
