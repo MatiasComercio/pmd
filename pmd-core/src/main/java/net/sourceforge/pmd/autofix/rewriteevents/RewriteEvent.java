@@ -25,6 +25,23 @@ public class RewriteEvent {
         this.oldChildNode = oldChildNode;
         this.newChildNode = newChildNode;
         this.childNodeIndex = requireNonNegative(childNodeIndex);
+        validateRewriteEventType();
+    }
+
+    private void validateRewriteEventType() {
+        if (Objects.equals(oldChildNode, newChildNode)) {
+            throw new IllegalArgumentException("Cannot generate a rewrite event with both child nodes being equal");
+        } else if (oldChildNode == null) {
+            if (rewriteEventType != RewriteEventType.INSERT) {
+                throw new IllegalArgumentException("Invalid rewrite event. Expecting INSERT as oldChildNode == null & newChildNode != null");
+            }
+        } else if (newChildNode == null) {
+            if (rewriteEventType != RewriteEventType.REMOVE) {
+                throw new IllegalArgumentException("Invalid rewrite event. Expecting REMOVE as oldChildNode != null & newChildNode == null");
+            }
+        } else if (rewriteEventType != RewriteEventType.REPLACE) { // Both child nodes are not null, but not equal => it should be a replace
+            throw new IllegalArgumentException("Invalid rewrite event. Expecting REPLACE as oldChildNode != null & newChildNode != null");
+        }
     }
 
     private int requireNonNegative(final int n) {
