@@ -11,6 +11,7 @@ import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.INSERT;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class RewriteEventsMergersTest {
     private static final Node PARENT_NODE = DummyNode.newInstance();
@@ -186,4 +187,62 @@ public class RewriteEventsMergersTest {
             assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
         }
     }
+
+    // ----------------- `Remove` As Original Event Test Cases ----------------- //
+    @Test
+    public void removeInsertMergerTest() {
+        final int childIndex = REMOVE_I;
+        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, INSERT);
+        final RewriteEvent newRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
+        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
+
+        // Do the actual merge
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
+
+        // Expect: replace the original remove event with a replace event,
+        //  with the oldChildNode being the oldChildNode of the original remove event,
+        //  and with the newChildNode being the newChildNode of the new insert event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
+
+        // Check updated array content
+        for (int i = 0; i < updatedRewriteEvents.length; i++) {
+            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
+            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
+        }
+    }
+
+    @Test
+    public void removeReplaceMergerTest() {
+        final int childIndex = REMOVE_I;
+        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, REPLACE);
+        final RewriteEvent newRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
+        try {
+            // Do the actual merge
+            rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
+            // Expecting fail as a remove event cannot be followed by a replace event.
+            //  This would mean that an already removed node is then trying to be replaced, which makes no sense
+            fail();
+        } catch (final Exception ignored) {
+            // Expected flow
+        }
+    }
+
+    @Test
+    public void removeRemoveMergerTest() {
+        final int childIndex = REMOVE_I;
+        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, REPLACE);
+        final RewriteEvent newRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE);
+        try {
+            // Do the actual merge
+            rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
+            // Expecting fail as a remove event cannot be followed by a replace event.
+            //  This would mean that an already removed node is then trying to be replaced, which makes no sense
+            fail();
+        } catch (final Exception ignored) {
+            // Expected flow
+        }
+    }
+
 }
