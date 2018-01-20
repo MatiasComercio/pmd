@@ -13,6 +13,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
+import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorder;
 import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorderImpl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jaxen.BaseXPath;
@@ -40,7 +42,7 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private NodeEventsRecorderImpl nodeEventsRecorder; // xnow document
+    private NodeEventsRecorder nodeEventsRecorder; // xnow document
 
     public AbstractNode(int id) {
         this.id = id;
@@ -527,5 +529,15 @@ public abstract class AbstractNode implements Node {
     private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
                                    final Node newChildNode, final int childIndex) {
         nodeEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
+    }
+
+    @Override
+    public boolean hasChildrenChanged() {
+        return nodeEventsRecorder.hasRewriteEvents();
+    }
+
+    @Override
+    public NodeEvent[] getRewriteEvents() {
+        return nodeEventsRecorder.getRewriteEvents();
     }
 }

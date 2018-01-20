@@ -7,6 +7,7 @@ package net.sourceforge.pmd.lang.ast;
 
 import java.util.List;
 
+import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 
@@ -316,4 +317,10 @@ public interface Node {
      * @throws NullPointerException if {@code newChild} is null
      */
     void replace(Node newChild, int index);
+
+    // xnow document
+    boolean hasChildrenChanged();
+
+    // xnow document
+    NodeEvent[] getRewriteEvents();
 }

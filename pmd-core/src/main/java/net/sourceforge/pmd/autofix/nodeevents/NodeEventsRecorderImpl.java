@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.autofix.nodeevents;
 
+import java.util.Arrays;
 import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 
@@ -41,6 +42,17 @@ public class NodeEventsRecorderImpl implements NodeEventsRecorder {
         validateNonNullIndex(childIndex);
 
         recordNodeEvents(NodeEventFactory.createReplaceNodeEvent(parentNode, childIndex, oldChildNode, newChildNode));
+    }
+
+    @Override
+    public boolean hasRewriteEvents() {
+        return nodeEvents != null && nodeEvents.length > 0;
+    }
+
+    @Override
+    public NodeEvent[] getRewriteEvents() {
+        // Completely immutable as NodeEvent has all its fields final
+        return Arrays.copyOf(nodeEvents, nodeEvents.length);
     }
 
     private void validateNonNullIndex(final int index) {

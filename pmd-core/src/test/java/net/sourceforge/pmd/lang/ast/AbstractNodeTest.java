@@ -6,8 +6,12 @@ package net.sourceforge.pmd.lang.ast;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
+import net.sourceforge.pmd.autofix.nodeevents.NodeEventFactory;
+import net.sourceforge.pmd.autofix.nodeevents.NodeEventType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -379,5 +383,35 @@ public class AbstractNodeTest {
             assertEquals(rootNode, iNode.jjtGetParent());
             assertEquals(originalChildren[i], iNode);
         }
+    }
+
+    // ----------------- Node Events Test Cases ----------------- //
+
+    /**
+     * Test that insert, replace and remove operations carried out over the AST are correctly
+     *  mapped to the corresponding events
+     */
+    @Test
+    public void testNodeEventsOverAST() {
+        // In this case, we are only testing that the parent node return the correct events associated with each
+        //  type of rewrite operation. Exhaustive tests over the events manipulation are done over the
+        //  class in charge of that implementation.
+        final Node newDummyNode = newDummyNode();
+        rootNode.insert(newDummyNode, 0);
+        final Node oldReplaceNode = rootNode.jjtGetChild(1);
+        rootNode.replace(newDummyNode, 1);
+        final Node oldRemoveNode = rootNode.jjtGetChild(2);
+        rootNode.remove(2);
+
+        assertTrue(rootNode.hasChildrenChanged());
+
+        final NodeEvent insertNodeEvent = NodeEventFactory.createInsertNodeEvent(rootNode, 0, newDummyNode);
+        final NodeEvent replaceNodeEvent = NodeEventFactory.createReplaceNodeEvent(rootNode, 1, oldReplaceNode, newDummyNode);
+        final NodeEvent removeNodeEvent = NodeEventFactory.createRemoveNodeEvent(rootNode, 2, oldRemoveNode);
+
+        final NodeEvent[] nodeEvents = rootNode.getRewriteEvents();
+        assertEquals(insertNodeEvent, nodeEvents[0]);
+        assertEquals(replaceNodeEvent, nodeEvents[1]);
+        assertEquals(removeNodeEvent, nodeEvents[2]);
     }
 }

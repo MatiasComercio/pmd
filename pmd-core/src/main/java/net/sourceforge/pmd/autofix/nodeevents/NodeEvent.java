@@ -4,8 +4,10 @@
 
 package net.sourceforge.pmd.autofix.nodeevents;
 
+import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 
+// xnow document
 public class NodeEvent {
     private final NodeEventType nodeEventType;
     private final Node parentNode;
@@ -18,11 +20,18 @@ public class NodeEvent {
                      final Node oldChildNode,
                      final Node newChildNode,
                      final int childNodeIndex) {
-        this.nodeEventType = nodeEventType;
-        this.parentNode = parentNode;
+        this.nodeEventType = Objects.requireNonNull(nodeEventType);
+        this.parentNode = Objects.requireNonNull(parentNode);
         this.oldChildNode = oldChildNode;
         this.newChildNode = newChildNode;
-        this.childNodeIndex = childNodeIndex;
+        this.childNodeIndex = requireNonNegative(childNodeIndex);
+    }
+
+    private int requireNonNegative(final int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException(String.format("n <%d> is lower than 0", n));
+        }
+        return childNodeIndex;
     }
 
     public NodeEventType getNodeEventType() {
@@ -43,5 +52,26 @@ public class NodeEvent {
 
     public int getChildNodeIndex() {
         return childNodeIndex;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final NodeEvent nodeEvent = (NodeEvent) o;
+        return childNodeIndex == nodeEvent.childNodeIndex &&
+            nodeEventType == nodeEvent.nodeEventType &&
+            Objects.equals(parentNode, nodeEvent.parentNode) &&
+            Objects.equals(oldChildNode, nodeEvent.oldChildNode) &&
+            Objects.equals(newChildNode, nodeEvent.newChildNode);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(nodeEventType, parentNode, oldChildNode, newChildNode, childNodeIndex);
     }
 }

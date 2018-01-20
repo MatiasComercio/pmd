@@ -11,4 +11,10 @@ public interface NodeEventsRecorder {
 
     // xnow document
     void recordReplace(Node parentNode, Node oldChildNode, Node newChildNode, int childIndex);
+
+    // xnow document
+    boolean hasRewriteEvents();
+
+    // xnow document
+    NodeEvent[] getRewriteEvents();
 }
