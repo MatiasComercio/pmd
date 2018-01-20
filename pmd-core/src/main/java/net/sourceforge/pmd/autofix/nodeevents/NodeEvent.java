@@ -31,7 +31,7 @@ public class NodeEvent {
         if (n < 0) {
             throw new IllegalArgumentException(String.format("n <%d> is lower than 0", n));
         }
-        return childNodeIndex;
+        return n;
     }
 
     public NodeEventType getNodeEventType() {
