@@ -1,5 +1,6 @@
 package net.sourceforge.pmd.autofix.rewriteevents;
 
+import net.sourceforge.pmd.lang.ast.Node;
 import org.apache.commons.lang3.ArrayUtils;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createInsertRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createRemoveRewriteEvent;
@@ -12,6 +13,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger INSERT_NEW_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             return ArrayUtils.insert(childIndex, rewriteEvents, newRewriteEvent);
         }
     };
@@ -94,5 +96,29 @@ public abstract class RewriteEventsMergers {
 
     public static RewriteEventsMerger getRewriteEventsMerger(final RewriteEventType oldEventType, final RewriteEventType newEventType) {
         return REWRITE_EVENTS_MERGERS[oldEventType.getIndex()][newEventType.getIndex()];
+    }
+
+    private static void validate(final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+        final int oldEventIndex = oldRewriteEvent.getChildNodeIndex();
+        final int newEventIndex = newRewriteEvent.getChildNodeIndex();
+        if (childIndex !=  oldEventIndex || childIndex != newEventIndex) {
+            final String msg = String.format("Invalid childIndex. childIndex: <%d>, " +
+                "oldRewriteEvent.childIndex: <%d>, newRewriteEvent.childIndex: <%d>",
+                childIndex, oldEventIndex, newEventIndex);
+            throw new IllegalArgumentException(msg);
+        }
+
+        final Node oldEventParentNode = oldRewriteEvent.getParentNode();
+        final Node newEventParentNode = newRewriteEvent.getParentNode();
+        if (!oldEventParentNode.equals(newEventParentNode)) {
+            throw new IllegalArgumentException("Parent nodes of both rewrite events should be the same.");
+        }
+
+        // TODO: doing validate that old child is the one that should be
+        final Node oldEventOldChild = oldRewriteEvent.getOldChildNode();
+        final Node newEventOldChild = newRewriteEvent.getOldChildNode();
+        if (newEventOldChild != null) {
+
+        }
     }
 }
