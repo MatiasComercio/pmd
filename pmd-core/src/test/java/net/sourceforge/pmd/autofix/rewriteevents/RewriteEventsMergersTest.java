@@ -1,9 +1,12 @@
 package net.sourceforge.pmd.autofix.rewriteevents;
 
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createInsertRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createRemoveRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createReplaceRewriteEvent;
@@ -13,6 +16,7 @@ import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(JUnitParamsRunner.class)
 public class RewriteEventsMergersTest {
     private static final Node PARENT_NODE = DummyNode.newInstance();
     private static final Node PARENT_NODE_2 = DummyNode.newInstance(); // TODO: use to make sure we are validating parent node correspondence among events
@@ -38,6 +42,7 @@ public class RewriteEventsMergersTest {
         rewriteEvents[REMOVE_REWRITE_EVENT.getChildNodeIndex()] = REMOVE_REWRITE_EVENT;
     }
 
+    // ----------------- Valid Merge Rewrite Events Test Cases ----------------- //
     // ----------------- `Insert` As Original Event Test Cases ----------------- //
 
     @Test
@@ -213,30 +218,46 @@ public class RewriteEventsMergersTest {
         }
     }
 
-    @Test
-    public void removeReplaceMergerTest() {
-        final int childIndex = REMOVE_I;
-        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, REPLACE);
-        final RewriteEvent newRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
-        try {
-            // Do the actual merge
-            rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
+    // removeReplace & removeRemove are both invalid cases; check below
+
+    // ----------------- Invalid Merge Rewrite Events Test Cases ----------------- //
+
+    @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
+    private Object invalidMergeRewriteEventsTestParameters() {
+        final DummyNode node = new DummyNode(0);
+        return new Object[] {
+            // Insert cases
+            new Object[] {-1, INSERT_REWRITE_EVENT, INSERT_REWRITE_EVENT}, // Invalid index
+            new Object[] {INSERT_I, INSERT_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE_2, INSERT_I, NEW_CHILD_NODE)}, // Not the same parent
+            new Object[] {INSERT_I, INSERT_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE, REPLACE_I, NEW_CHILD_NODE)}, // Not the same index
+            // Replace cases
+            new Object[] {-1, REPLACE_REWRITE_EVENT, INSERT_REWRITE_EVENT}, // Invalid index
+            new Object[] {REPLACE_I, REPLACE_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE_2, INSERT_I, NEW_CHILD_NODE)}, // Not the same parent
+            new Object[] {REPLACE_I, REPLACE_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE)}, // Not the same index
+            // [replace->replace] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
+            new Object[] {REPLACE_I, REPLACE_REWRITE_EVENT, createReplaceRewriteEvent(PARENT_NODE_2, INSERT_I, OLD_CHILD_NODE_2, NEW_CHILD_NODE_2)},
+            // [replace->remove] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
+            new Object[] {REPLACE_I, REPLACE_REWRITE_EVENT, createRemoveRewriteEvent(PARENT_NODE_2, INSERT_I, OLD_CHILD_NODE_2)},
+            // Remove cases
+            new Object[] {-1, REMOVE_REWRITE_EVENT, INSERT_REWRITE_EVENT}, // Invalid index
+            new Object[] {REMOVE_I, REMOVE_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE_2, INSERT_I, NEW_CHILD_NODE)}, // Not the same parent
+            new Object[] {REMOVE_I, REMOVE_REWRITE_EVENT, createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE)}, // Not the same index
             // Expecting fail as a remove event cannot be followed by a replace event.
             //  This would mean that an already removed node is then trying to be replaced, which makes no sense
-            fail();
-        } catch (final Exception ignored) {
-            // Expected flow
-        }
+            new Object[] {REMOVE_I, REMOVE_REWRITE_EVENT, createReplaceRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE, NEW_CHILD_NODE_2)},
+            // Expecting fail as a remove event cannot be followed by another remove event.
+            //  This would mean that an already removed node is then trying to be removed again, which makes no sense
+            new Object[] {REMOVE_I, REMOVE_REWRITE_EVENT, createRemoveRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE)}
+        };
     }
 
     @Test
-    public void removeRemoveMergerTest() {
-        final int childIndex = REMOVE_I;
-        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, REPLACE);
-        final RewriteEvent newRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE);
+    @Parameters(method = "invalidMergeRewriteEventsTestParameters")
+    public void invalidMergeRewriteEventsTest(final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(oldRewriteEvent.getRewriteEventType(), newRewriteEvent.getRewriteEventType());
         try {
             // Do the actual merge
-            rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
+            rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, oldRewriteEvent, newRewriteEvent);
             // Expecting fail as a remove event cannot be followed by a replace event.
             //  This would mean that an already removed node is then trying to be replaced, which makes no sense
             fail();
