@@ -2,25 +2,25 @@
  * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
  */
 
-package net.sourceforge.pmd.autofix.nodeevents;
+package net.sourceforge.pmd.autofix.rewriteevents;
 
 import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 
 // xnow document
-public class NodeEvent {
-    private final NodeEventType nodeEventType;
+public class RewriteEvent {
+    private final RewriteEventType rewriteEventType;
     private final Node parentNode;
     private final Node oldChildNode;
     private final Node newChildNode;
     private final int childNodeIndex;
 
-    public NodeEvent(final NodeEventType nodeEventType,
-                     final Node parentNode,
-                     final Node oldChildNode,
-                     final Node newChildNode,
-                     final int childNodeIndex) {
-        this.nodeEventType = Objects.requireNonNull(nodeEventType);
+    public RewriteEvent(final RewriteEventType rewriteEventType,
+                        final Node parentNode,
+                        final Node oldChildNode,
+                        final Node newChildNode,
+                        final int childNodeIndex) {
+        this.rewriteEventType = Objects.requireNonNull(rewriteEventType);
         this.parentNode = Objects.requireNonNull(parentNode);
         this.oldChildNode = oldChildNode;
         this.newChildNode = newChildNode;
@@ -34,8 +34,8 @@ public class NodeEvent {
         return n;
     }
 
-    public NodeEventType getNodeEventType() {
-        return nodeEventType;
+    public RewriteEventType getRewriteEventType() {
+        return rewriteEventType;
     }
 
     public Node getParentNode() {
@@ -62,16 +62,16 @@ public class NodeEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final NodeEvent nodeEvent = (NodeEvent) o;
-        return childNodeIndex == nodeEvent.childNodeIndex &&
-            nodeEventType == nodeEvent.nodeEventType &&
-            Objects.equals(parentNode, nodeEvent.parentNode) &&
-            Objects.equals(oldChildNode, nodeEvent.oldChildNode) &&
-            Objects.equals(newChildNode, nodeEvent.newChildNode);
+        final RewriteEvent rewriteEvent = (RewriteEvent) o;
+        return childNodeIndex == rewriteEvent.childNodeIndex &&
+            rewriteEventType == rewriteEvent.rewriteEventType &&
+            Objects.equals(parentNode, rewriteEvent.parentNode) &&
+            Objects.equals(oldChildNode, rewriteEvent.oldChildNode) &&
+            Objects.equals(newChildNode, rewriteEvent.newChildNode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeEventType, parentNode, oldChildNode, newChildNode, childNodeIndex);
+        return Objects.hash(rewriteEventType, parentNode, oldChildNode, newChildNode, childNodeIndex);
     }
 }

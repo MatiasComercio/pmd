@@ -13,9 +13,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
-import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorder;
-import net.sourceforge.pmd.autofix.nodeevents.NodeEventsRecorderImpl;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorder;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorderImpl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jaxen.BaseXPath;
 import org.jaxen.JaxenException;
@@ -42,11 +42,11 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private NodeEventsRecorder nodeEventsRecorder; // xnow document
+    private RewriteEventsRecorder rewriteEventsRecorder; // xnow document
 
     public AbstractNode(int id) {
         this.id = id;
-        this.nodeEventsRecorder = new NodeEventsRecorderImpl();
+        this.rewriteEventsRecorder = new RewriteEventsRecorderImpl();
     }
 
     public AbstractNode(int id, int theBeginLine, int theEndLine, int theBeginColumn, int theEndColumn) {
@@ -519,25 +519,25 @@ public abstract class AbstractNode implements Node {
     }
 
     private void removeChildEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
-        nodeEventsRecorder.recordRemove(parentNode, oldChildNode, childIndex);
+        rewriteEventsRecorder.recordRemove(parentNode, oldChildNode, childIndex);
     }
 
     private void insertChildEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
-        nodeEventsRecorder.recordInsert(parentNode, newChildNode, childIndex);
+        rewriteEventsRecorder.recordInsert(parentNode, newChildNode, childIndex);
     }
 
     private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
                                    final Node newChildNode, final int childIndex) {
-        nodeEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
+        rewriteEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
     }
 
     @Override
     public boolean hasChildrenChanged() {
-        return nodeEventsRecorder.hasRewriteEvents();
+        return rewriteEventsRecorder.hasRewriteEvents();
     }
 
     @Override
-    public NodeEvent[] getRewriteEvents() {
-        return nodeEventsRecorder.getRewriteEvents();
+    public RewriteEvent[] getChildrenRewriteEvents() {
+        return rewriteEventsRecorder.getRewriteEvents();
     }
 }

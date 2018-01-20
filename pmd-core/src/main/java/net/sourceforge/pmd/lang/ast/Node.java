@@ -7,7 +7,7 @@ package net.sourceforge.pmd.lang.ast;
 
 import java.util.List;
 
-import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 
@@ -322,5 +322,5 @@ public interface Node {
     boolean hasChildrenChanged();
 
     // xnow document
-    NodeEvent[] getRewriteEvents();
+    RewriteEvent[] getChildrenRewriteEvents();
 }

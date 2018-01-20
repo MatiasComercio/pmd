@@ -9,9 +9,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import net.sourceforge.pmd.autofix.nodeevents.NodeEvent;
-import net.sourceforge.pmd.autofix.nodeevents.NodeEventFactory;
-import net.sourceforge.pmd.autofix.nodeevents.NodeEventType;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -388,11 +387,11 @@ public class AbstractNodeTest {
     // ----------------- Node Events Test Cases ----------------- //
 
     /**
-     * Test that insert, replace and remove operations carried out over the AST are correctly
-     *  mapped to the corresponding events
+     * Test that rewrite operations (insert, replace and remove) carried out over the AST are correctly
+     *  mapped to the corresponding rewrite events
      */
     @Test
-    public void testNodeEventsOverAST() {
+    public void testRewriteEventsOverAST() {
         // In this case, we are only testing that the parent node return the correct events associated with each
         //  type of rewrite operation. Exhaustive tests over the events manipulation are done over the
         //  class in charge of that implementation.
@@ -405,13 +404,13 @@ public class AbstractNodeTest {
 
         assertTrue(rootNode.hasChildrenChanged());
 
-        final NodeEvent insertNodeEvent = NodeEventFactory.createInsertNodeEvent(rootNode, 0, newDummyNode);
-        final NodeEvent replaceNodeEvent = NodeEventFactory.createReplaceNodeEvent(rootNode, 1, oldReplaceNode, newDummyNode);
-        final NodeEvent removeNodeEvent = NodeEventFactory.createRemoveNodeEvent(rootNode, 2, oldRemoveNode);
+        final RewriteEvent insertRewriteEvent = RewriteEventFactory.createInsertRewriteEvent(rootNode, 0, newDummyNode);
+        final RewriteEvent replaceRewriteEvent = RewriteEventFactory.createReplaceRewriteEvent(rootNode, 1, oldReplaceNode, newDummyNode);
+        final RewriteEvent removeRewriteEvent = RewriteEventFactory.createRemoveRewriteEvent(rootNode, 2, oldRemoveNode);
 
-        final NodeEvent[] nodeEvents = rootNode.getRewriteEvents();
-        assertEquals(insertNodeEvent, nodeEvents[0]);
-        assertEquals(replaceNodeEvent, nodeEvents[1]);
-        assertEquals(removeNodeEvent, nodeEvents[2]);
+        final RewriteEvent[] rewriteEvents = rootNode.getChildrenRewriteEvents();
+        assertEquals(insertRewriteEvent, rewriteEvents[0]);
+        assertEquals(replaceRewriteEvent, rewriteEvents[1]);
+        assertEquals(removeRewriteEvent, rewriteEvents[2]);
     }
 }

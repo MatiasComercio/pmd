@@ -1,8 +1,8 @@
-package net.sourceforge.pmd.autofix.nodeevents;
+package net.sourceforge.pmd.autofix.rewriteevents;
 
 import net.sourceforge.pmd.lang.ast.Node;
 
-public interface NodeEventsRecorder {
+public interface RewriteEventsRecorder {
     // xnow document
     void recordRemove(Node parentNode, Node oldChildNode, int childIndex);
 
@@ -16,5 +16,5 @@ public interface NodeEventsRecorder {
     boolean hasRewriteEvents();
 
     // xnow document
-    NodeEvent[] getRewriteEvents();
+    RewriteEvent[] getRewriteEvents();
 }
