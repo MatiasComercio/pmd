@@ -72,7 +72,7 @@ public class RewriteEventsRecorderImplTest {
 //    }
 
     // -----------------** Merge Rewrite Events Test Cases ***----------------- //
-
+    // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
     private Object testValidMergeRewriteEventsParameters() {
         return new Object[] {
             // `Insert` As Original Event Test Cases
@@ -98,6 +98,36 @@ public class RewriteEventsRecorderImplTest {
                 new RemovedOriginalRewriteEventExpectation()
             },
             // `Replace` As Original Event Test Cases
+            new Object[] { // replace -> insert
+                ORIGINAL_REPLACE_RECORDER,
+                new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE_2, REPLACE_I),
+                createInsertRewriteEvent(PARENT_NODE, REPLACE_I, NEW_CHILD_NODE_2),
+                REPLACE_I,
+                new InsertedNewRewriteEventExpectation()
+            },
+            new Object[] { // replace -> replace
+                ORIGINAL_REPLACE_RECORDER,
+                new ReplaceRecorder(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, REPLACE_I),
+                createReplaceRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE, NEW_CHILD_NODE_2),
+                REPLACE_I,
+                new ReplacedOriginalRewriteEventExpectation()
+            },
+            new Object[] { // replace -> remove
+                ORIGINAL_REPLACE_RECORDER,
+                new RemoveRecorder(PARENT_NODE, NEW_CHILD_NODE, REPLACE_I),
+                createRemoveRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE),
+                REPLACE_I,
+                new ReplacedOriginalRewriteEventExpectation()
+            },
+            // `Remove` As Original Event Test Cases
+            new Object[] { // remove -> insert
+                ORIGINAL_REMOVE_RECORDER,
+                new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE_2, REMOVE_I),
+                createReplaceRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE, NEW_CHILD_NODE_2),
+                REMOVE_I,
+                new ReplacedOriginalRewriteEventExpectation()
+            }
+            // remove -> replace & remove -> remove are both invalid cases; check `testInvalidMergeRewriteEvents`
         };
     }
 
@@ -120,89 +150,6 @@ public class RewriteEventsRecorderImplTest {
         expectation.expect(originalRewriteEvents, updatedRewriteEvents, expectedNewRewriteEvent, rewriteEventIndex);
     }
 
-
-
-//    // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
-//    // ----------------- `Replace` As Original Event Test Cases ----------------- //
-//    @Test
-//    public void replaceInsertMergerTest() {
-//        final int childIndex = REPLACE_I;
-//
-//        // Record the original event
-//        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
-//
-//        final RewriteEvent expectedNewRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectInsertedNewRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedNewRewriteEvent, childIndex);
-//    }
-//
-//    @Test
-//    public void replaceReplaceMergerTest() {
-//        final int childIndex = REPLACE_I;
-//
-//        // Record the original event
-//        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordReplace(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, childIndex);
-//
-//        // Expect: replace the original replace event with a new replace event,
-//        //  with the oldChildNode being the oldChildNode of the original replace event,
-//        //  and with the newChildNode being the newChildNode of the new replace event
-//        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectReplacedOriginalRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedMergedRewriteEvent, childIndex);
-//    }
-//
-//    @Test
-//    public void replaceRemoveMergerTest() {
-//        final int childIndex = REPLACE_I;
-//
-//        // Record the original event
-//        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordRemove(PARENT_NODE, NEW_CHILD_NODE, childIndex);
-//
-//        // Expect: replace the original replace event with a new remove event,
-//        //  with the oldChildNode being the oldChildNode of the original replace event
-//        final RewriteEvent expectedMergedRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectReplacedOriginalRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedMergedRewriteEvent, childIndex);
-//    }
-//
-//    // ----------------- `Remove` As Original Event Test Cases ----------------- //
-//    @Test
-//    public void removeInsertMergerTest() {
-//        final int childIndex = REMOVE_I;
-//
-//        // Record the original event
-//        ORIGINAL_REMOVE_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
-//
-//        // Expect: replace the original remove event with a replace event,
-//        //  with the oldChildNode being the oldChildNode of the original remove event,
-//        //  and with the newChildNode being the newChildNode of the new insert event
-//        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectReplacedOriginalRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedMergedRewriteEvent, childIndex);
-//    }
-//
-//    // removeReplace & removeRemove are both invalid cases; check below
-//
 //    // -----------------* Invalid Merge Rewrite Events Test Cases *----------------- //
 //
 //    @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
