@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 import org.apache.commons.lang3.ArrayUtils;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createInsertRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createRemoveRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createReplaceRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newInsertRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newRemoveRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newReplaceRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.INSERT;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
@@ -29,7 +29,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         Objects.requireNonNull(oldChildNode);
         validateNonNullIndex(childIndex);
 
-        recordRewriteEvent(RewriteEventFactory.createRemoveRewriteEvent(parentNode, childIndex, oldChildNode));
+        recordRewriteEvent(RewriteEventFactory.newRemoveRewriteEvent(parentNode, oldChildNode, childIndex));
     }
 
     @Override
@@ -38,7 +38,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         Objects.requireNonNull(newChildNode);
         validateNonNullIndex(childIndex);
 
-        recordRewriteEvent(RewriteEventFactory.createInsertRewriteEvent(parentNode, childIndex, newChildNode));
+        recordRewriteEvent(RewriteEventFactory.newInsertRewriteEvent(parentNode, newChildNode, childIndex));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         Objects.requireNonNull(newChildNode);
         validateNonNullIndex(childIndex);
 
-        recordRewriteEvent(RewriteEventFactory.createReplaceRewriteEvent(parentNode, childIndex, oldChildNode, newChildNode));
+        recordRewriteEvent(RewriteEventFactory.newReplaceRewriteEvent(parentNode, oldChildNode, newChildNode, childIndex));
     }
 
     @Override
@@ -122,7 +122,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             @Override
             public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
                 validate(childIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = createInsertRewriteEvent(newRewriteEvent.getParentNode(), childIndex, newRewriteEvent.getNewChildNode());
+                final RewriteEvent mergedRewriteEvent = newInsertRewriteEvent(newRewriteEvent.getParentNode(), newRewriteEvent.getNewChildNode(), childIndex);
                 rewriteEvents[childIndex] = mergedRewriteEvent;
                 return rewriteEvents;
             }
@@ -132,7 +132,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             @Override
             public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
                 validate(childIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = createReplaceRewriteEvent(newRewriteEvent.getParentNode(), childIndex, oldRewriteEvent.getOldChildNode(), newRewriteEvent.getNewChildNode());
+                final RewriteEvent mergedRewriteEvent = newReplaceRewriteEvent(newRewriteEvent.getParentNode(), oldRewriteEvent.getOldChildNode(), newRewriteEvent.getNewChildNode(), childIndex);
                 rewriteEvents[childIndex] = mergedRewriteEvent;
                 return rewriteEvents;
             }
@@ -142,7 +142,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             @Override
             public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
                 validate(childIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = createRemoveRewriteEvent(newRewriteEvent.getParentNode(), childIndex, oldRewriteEvent.getOldChildNode());
+                final RewriteEvent mergedRewriteEvent = newRemoveRewriteEvent(newRewriteEvent.getParentNode(), oldRewriteEvent.getOldChildNode(), childIndex);
                 rewriteEvents[childIndex] = mergedRewriteEvent;
                 return rewriteEvents;
             }

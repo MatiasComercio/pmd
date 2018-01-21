@@ -404,9 +404,9 @@ public class AbstractNodeTest {
 
         assertTrue(rootNode.hasChildrenChanged());
 
-        final RewriteEvent insertRewriteEvent = RewriteEventFactory.createInsertRewriteEvent(rootNode, 0, newDummyNode);
-        final RewriteEvent replaceRewriteEvent = RewriteEventFactory.createReplaceRewriteEvent(rootNode, 1, oldReplaceNode, newDummyNode);
-        final RewriteEvent removeRewriteEvent = RewriteEventFactory.createRemoveRewriteEvent(rootNode, 2, oldRemoveNode);
+        final RewriteEvent insertRewriteEvent = RewriteEventFactory.newInsertRewriteEvent(rootNode, newDummyNode, 0);
+        final RewriteEvent replaceRewriteEvent = RewriteEventFactory.newReplaceRewriteEvent(rootNode, oldReplaceNode, newDummyNode, 1);
+        final RewriteEvent removeRewriteEvent = RewriteEventFactory.newRemoveRewriteEvent(rootNode, oldRemoveNode, 2);
 
         final RewriteEvent[] rewriteEvents = rootNode.getChildrenRewriteEvents();
         assertEquals(insertRewriteEvent, rewriteEvents[0]);

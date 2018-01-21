@@ -21,7 +21,7 @@ public class RewriteEventFactoryTest {
 
     @Test
     public void testCreateInsertRewriteEvent() {
-        final RewriteEvent insertRewriteEvent = RewriteEventFactory.createInsertRewriteEvent(PARENT_NODE, CHILD_INDEX, NEW_CHILD_NODE);
+        final RewriteEvent insertRewriteEvent = RewriteEventFactory.newInsertRewriteEvent(PARENT_NODE, NEW_CHILD_NODE, CHILD_INDEX);
         assertEquals(INSERT, insertRewriteEvent.getRewriteEventType());
         assertEquals(PARENT_NODE, insertRewriteEvent.getParentNode());
         assertNull(insertRewriteEvent.getOldChildNode());
@@ -31,7 +31,7 @@ public class RewriteEventFactoryTest {
 
     @Test
     public void testCreateRemoveRewriteEvent() {
-        final RewriteEvent insertRewriteEvent = RewriteEventFactory.createRemoveRewriteEvent(PARENT_NODE, CHILD_INDEX, OLD_CHILD_NODE);
+        final RewriteEvent insertRewriteEvent = RewriteEventFactory.newRemoveRewriteEvent(PARENT_NODE, OLD_CHILD_NODE, CHILD_INDEX);
         assertEquals(REMOVE, insertRewriteEvent.getRewriteEventType());
         assertEquals(PARENT_NODE, insertRewriteEvent.getParentNode());
         assertEquals(OLD_CHILD_NODE, insertRewriteEvent.getOldChildNode());
@@ -41,7 +41,7 @@ public class RewriteEventFactoryTest {
 
     @Test
     public void testCreateReplaceRewriteEvent() {
-        final RewriteEvent insertRewriteEvent = RewriteEventFactory.createReplaceRewriteEvent(PARENT_NODE, CHILD_INDEX, OLD_CHILD_NODE, NEW_CHILD_NODE);
+        final RewriteEvent insertRewriteEvent = RewriteEventFactory.newReplaceRewriteEvent(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, CHILD_INDEX);
         assertEquals(REPLACE, insertRewriteEvent.getRewriteEventType());
         assertEquals(PARENT_NODE, insertRewriteEvent.getParentNode());
         assertEquals(OLD_CHILD_NODE, insertRewriteEvent.getOldChildNode());
