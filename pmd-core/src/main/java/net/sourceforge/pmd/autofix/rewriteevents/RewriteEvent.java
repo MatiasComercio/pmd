@@ -7,40 +7,47 @@ package net.sourceforge.pmd.autofix.rewriteevents;
 import java.util.Objects;
 import net.sourceforge.pmd.lang.ast.Node;
 
-// xnow document
+/**
+ * <p>
+ *   Describe a modification over a {@link Node} so as to be able to track changes over it.
+ * </p>
+ * <p>
+ *   The modification is described by specifying the node on which the modification has occurred ({@code parentNode}),
+ *      the old child node ({@code oldChildNode}), the new child node ({@code newChildNode}) and the index of the
+ *      child node being modified ({@code childNodeIndex}).
+ * </p>
+ * <p>
+ *   The {@code rewriteEventType} is obtained based on the provided values for
+ *   {@code oldChildNode} and {@code newChildNode} (which may be null).
+ * </p>
+ */
 public class RewriteEvent {
-    private final RewriteEventType rewriteEventType;
     private final Node parentNode;
     private final Node oldChildNode;
     private final Node newChildNode;
     private final int childNodeIndex;
+    private final RewriteEventType rewriteEventType;
 
-    public RewriteEvent(final RewriteEventType rewriteEventType,
-                        final Node parentNode,
+    public RewriteEvent(final Node parentNode,
                         final Node oldChildNode,
                         final Node newChildNode,
                         final int childNodeIndex) {
-        this.rewriteEventType = Objects.requireNonNull(rewriteEventType);
         this.parentNode = Objects.requireNonNull(parentNode);
         this.oldChildNode = oldChildNode;
         this.newChildNode = newChildNode;
         this.childNodeIndex = requireNonNegative(childNodeIndex);
-        validateRewriteEventType();
+        this.rewriteEventType = grabRewriteEventType();
     }
 
-    private void validateRewriteEventType() {
+    private RewriteEventType grabRewriteEventType() {
         if (Objects.equals(oldChildNode, newChildNode)) {
             throw new IllegalArgumentException("Cannot generate a rewrite event with both child nodes being equal");
-        } else if (oldChildNode == null) {
-            if (rewriteEventType != RewriteEventType.INSERT) {
-                throw new IllegalArgumentException("Invalid rewrite event. Expecting INSERT as oldChildNode == null & newChildNode != null");
-            }
-        } else if (newChildNode == null) {
-            if (rewriteEventType != RewriteEventType.REMOVE) {
-                throw new IllegalArgumentException("Invalid rewrite event. Expecting REMOVE as oldChildNode != null & newChildNode == null");
-            }
-        } else if (rewriteEventType != RewriteEventType.REPLACE) { // Both child nodes are not null, but not equal => it should be a replace
-            throw new IllegalArgumentException("Invalid rewrite event. Expecting REPLACE as oldChildNode != null & newChildNode != null");
+        } else if (oldChildNode == null) { // newChildNode not null as they are not equal
+            return RewriteEventType.INSERT;
+        } else if (newChildNode == null) { // oldChildNode not null as they are not equal
+            return RewriteEventType.REMOVE;
+        } else {  // oldChildNode & newChildNode are both not null & not equal
+            return RewriteEventType.REPLACE;
         }
     }
 

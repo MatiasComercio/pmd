@@ -6,7 +6,6 @@ package net.sourceforge.pmd.autofix.rewriteevents;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import net.sourceforge.pmd.lang.ast.AbstractNode;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 import org.junit.Test;
@@ -67,7 +66,7 @@ public class RewriteEventTest {
                                               final boolean expectValidationFail
     ) {
         try {
-            final RewriteEvent rewriteEvent = new RewriteEvent(rewriteEventType, parentNode, oldChildNode, newChildNode, childIndex);
+            final RewriteEvent rewriteEvent = new RewriteEvent(parentNode, oldChildNode, newChildNode, childIndex);
             assertEquals(rewriteEventType, rewriteEvent.getRewriteEventType());
             assertEquals(parentNode, rewriteEvent.getParentNode());
             assertEquals(oldChildNode, rewriteEvent.getOldChildNode());

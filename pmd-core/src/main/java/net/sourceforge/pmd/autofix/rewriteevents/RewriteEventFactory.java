@@ -11,12 +11,12 @@ import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE
 
 public abstract class RewriteEventFactory {
     public static RewriteEvent newInsertRewriteEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
-        return new RewriteEvent(INSERT, parentNode, null, newChildNode, childIndex);
+        return new RewriteEvent(parentNode, null, newChildNode, childIndex);
     }
     public static RewriteEvent newRemoveRewriteEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
-        return new RewriteEvent(REMOVE, parentNode, oldChildNode, null, childIndex);
+        return new RewriteEvent(parentNode, oldChildNode, null, childIndex);
     }
     public static RewriteEvent newReplaceRewriteEvent(final Node parentNode, final Node oldChildNode, final Node newChildNode, final int childIndex) {
-        return new RewriteEvent(REPLACE, parentNode, oldChildNode, newChildNode, childIndex);
+        return new RewriteEvent(parentNode, oldChildNode, newChildNode, childIndex);
     }
 }
