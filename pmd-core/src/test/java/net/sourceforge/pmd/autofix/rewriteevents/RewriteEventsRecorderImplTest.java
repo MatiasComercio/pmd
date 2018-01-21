@@ -44,9 +44,13 @@ public class RewriteEventsRecorderImplTest {
     private static final int REPLACE_I = 1;
     private static final int REMOVE_I = 2;
 
-    private static final RewriteEvent INSERT_REWRITE_EVENT = createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE);
-    private static final RewriteEvent REPLACE_REWRITE_EVENT = createReplaceRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE, NEW_CHILD_NODE);
-    private static final RewriteEvent REMOVE_REWRITE_EVENT = createRemoveRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE);
+//    private static final RewriteEvent INSERT_REWRITE_EVENT = createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE);
+//    private static final RewriteEvent REPLACE_REWRITE_EVENT = createReplaceRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE, NEW_CHILD_NODE);
+//    private static final RewriteEvent REMOVE_REWRITE_EVENT = createRemoveRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE);
+
+    private static final Recorder ORIGINAL_INSERT_RECORDER = new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE, INSERT_I);
+    private static final Recorder ORIGINAL_REPLACE_RECORDER = new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, REPLACE_I);
+    private static final Recorder ORIGINAL_REMOVE_RECORDER = new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
 
     private RewriteEventsRecorder rewriteEventsRecorder;
 
@@ -57,14 +61,14 @@ public class RewriteEventsRecorderImplTest {
 
     // -----------------*** Single Rewrite Events Test Cases ***----------------- //
 
-    @Test
-    public void testRecordRemove() {
-        // Do the actual record
-        rewriteEventsRecorder.recordRemove(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
-
-        assertTrue(rewriteEventsRecorder.hasRewriteEvents());
-        assertEquals(REMOVE_REWRITE_EVENT, rewriteEventsRecorder.getRewriteEvents()[REMOVE_I]);
-    }
+//    @Test
+//    public void testRecordRemove() {
+//        // Do the actual record
+//        rewriteEventsRecorder.recordRemove(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
+//
+//        assertTrue(rewriteEventsRecorder.hasRewriteEvents());
+//        assertEquals(REMOVE_REWRITE_EVENT, rewriteEventsRecorder.getRewriteEvents()[REMOVE_I]);
+//    }
 
     // -----------------** Merge Rewrite Events Test Cases ***----------------- //
     // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
@@ -73,7 +77,7 @@ public class RewriteEventsRecorderImplTest {
     public void insertInsertMergerTest() {
         final int childIndex = INSERT_I;
         // Record the original event
-        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -104,7 +108,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = INSERT_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -130,7 +134,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = INSERT_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -161,7 +165,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = REPLACE_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -192,7 +196,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = REPLACE_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -220,7 +224,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = REPLACE_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        ORIGINAL_REPLACE_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -248,7 +252,7 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = REMOVE_I;
 
         // Record the original event
-        rewriteEventsRecorder.recordRemove(PARENT_NODE, OLD_CHILD_NODE, childIndex);
+        ORIGINAL_REMOVE_RECORDER.record(rewriteEventsRecorder);
         final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
@@ -278,28 +282,32 @@ public class RewriteEventsRecorderImplTest {
     @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
     private Object invalidMergeRewriteEventsTestParameters() {
         final DummyNode node = new DummyNode(0);
-        final Recorder originalInsertRecorder = new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE, INSERT_I);
-        final Recorder originalReplaceRecorder = new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, REPLACE_I);
-        final Recorder originalRemoveRecorder = new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
-
-        final Recorder newParentInsertRecorder = new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE, INSERT_I);
-        return new Object[] { // TODO: doing: think more cases
+        final Recorder newParentInsertRecorder = new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, INSERT_I);
+        final Recorder newParentReplaceRecorder = new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, INSERT_I);
+        final Recorder newParentRemoveRecorder = new InsertRecorder(PARENT_NODE_2, OLD_CHILD_NODE, INSERT_I);
+        return new Object[] {
             // Insert cases
-            new Object[] {originalInsertRecorder, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_INSERT_RECORDER, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_INSERT_RECORDER, newParentReplaceRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_INSERT_RECORDER, newParentRemoveRecorder}, // Not the same parent
             // Replace cases
-            new Object[] {originalReplaceRecorder, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REPLACE_RECORDER, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REPLACE_RECORDER, newParentReplaceRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REPLACE_RECORDER, newParentRemoveRecorder}, // Not the same parent
             // - [replace->replace] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
-            new Object[] {originalReplaceRecorder, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)},
+            new Object[] {ORIGINAL_REPLACE_RECORDER, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)},
             // - [replace->remove] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
-            new Object[] {originalReplaceRecorder, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE_2, REPLACE_I)},
+            new Object[] {ORIGINAL_REPLACE_RECORDER, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE_2, REPLACE_I)},
             // Remove cases
-            new Object[] {originalRemoveRecorder, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REMOVE_RECORDER, newParentInsertRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REMOVE_RECORDER, newParentReplaceRecorder}, // Not the same parent
+            new Object[] {ORIGINAL_REMOVE_RECORDER, newParentRemoveRecorder}, // Not the same parent
             // - Expecting fail as a remove event cannot be followed by a replace event.
             //      This would mean that an already removed node is then trying to be replaced, which makes no sense
-            new Object[] {originalRemoveRecorder, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REMOVE_I)},
+            new Object[] {ORIGINAL_REMOVE_RECORDER, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REMOVE_I)},
             // - Expecting fail as a remove event cannot be followed by another remove event.
             //      This would mean that an already removed node is then trying to be removed again, which makes no sense
-            new Object[] {originalRemoveRecorder, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I)},
+            new Object[] {ORIGINAL_REMOVE_RECORDER, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I)},
         };
     }
 
