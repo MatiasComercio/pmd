@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import junitparams.naming.TestCaseName;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 import org.junit.Before;
@@ -133,6 +134,7 @@ public class RewriteEventsRecorderImplTest {
 
     @Test
     @Parameters(method = "testValidMergeRewriteEventsParameters")
+    @TestCaseName("Valid Merge Rewrite Events: Original: <{0}> -> New: <{1}>")
     public void testValidMergeRewriteEvents(final Recorder originalEventRecorder,
                                             final Recorder newEventRecorder,
                                             final RewriteEvent expectedNewRewriteEvent,
@@ -151,42 +153,83 @@ public class RewriteEventsRecorderImplTest {
     }
 
     // -----------------* Invalid Merge Rewrite Events Test Cases *----------------- //
-
     @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
     private Object testInValidMergeRewriteEventsParameters() {
         final DummyNode node = new DummyNode(0);
-        final Recorder newParentInsertRecorder = new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, INSERT_I);
-        final Recorder newParentReplaceRecorder = new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, INSERT_I);
-        final Recorder newParentRemoveRecorder = new InsertRecorder(PARENT_NODE_2, OLD_CHILD_NODE, INSERT_I);
         return new Object[] {
             // Insert cases
-            new Object[] {ORIGINAL_INSERT_RECORDER, new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, INSERT_I)}, // Not the same parent
-            new Object[] {ORIGINAL_INSERT_RECORDER, new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, INSERT_I)}, // Not the same parent
-            new Object[] {ORIGINAL_INSERT_RECORDER, new RemoveRecorder(PARENT_NODE_2, OLD_CHILD_NODE, INSERT_I)}, // Not the same parent
+            new Object[] {
+                "Insert -> Insert: Not the same parent",
+                ORIGINAL_INSERT_RECORDER,
+                new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, INSERT_I)
+            },
+            new Object[] {
+                "Insert -> Replace: Not the same parent",
+                ORIGINAL_INSERT_RECORDER,
+                new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, INSERT_I)
+            },
+            new Object[] {
+                "Insert -> Remove: Not the same parent",
+                ORIGINAL_INSERT_RECORDER,
+                new RemoveRecorder(PARENT_NODE_2, OLD_CHILD_NODE, INSERT_I)
+            },
             // Replace cases
-            new Object[] {ORIGINAL_REPLACE_RECORDER, new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)}, // Not the same parent
-            new Object[] {ORIGINAL_REPLACE_RECORDER, new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REPLACE_I)}, // Not the same parent
-            new Object[] {ORIGINAL_REPLACE_RECORDER, new RemoveRecorder(PARENT_NODE_2, OLD_CHILD_NODE, REPLACE_I)}, // Not the same parent
+            new Object[] {
+                "Replace -> Insert: Not the same parent",
+                ORIGINAL_REPLACE_RECORDER,
+                new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)
+            },
+            new Object[] {
+                "Replace -> Replace: Not the same parent",
+                ORIGINAL_REPLACE_RECORDER,
+                new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REPLACE_I)
+            },
+            new Object[] {
+                "Replace -> Remove: Not the same parent",
+                ORIGINAL_REPLACE_RECORDER,
+                new RemoveRecorder(PARENT_NODE_2, OLD_CHILD_NODE, REPLACE_I)
+            },
             // - [replace->replace] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
-            new Object[] {ORIGINAL_REPLACE_RECORDER, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)},
+            new Object[] {
+                "Replace -> Replace: Not matching old event",
+                ORIGINAL_REPLACE_RECORDER,
+                new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE_2, NEW_CHILD_NODE_2, REPLACE_I)
+            },
             // - [replace->remove] oldChildNode of the new event should be the same as the newChildNode of the original event for merging
-            new Object[] {ORIGINAL_REPLACE_RECORDER, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE_2, REPLACE_I)},
+            new Object[] {
+                "Replace -> Remove: Not matching old event",
+                ORIGINAL_REPLACE_RECORDER,
+                new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE_2, REPLACE_I)
+            },
             // Remove cases
-            new Object[] {ORIGINAL_REMOVE_RECORDER, new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, REMOVE_I)}, // Not the same parent
-            new Object[] {ORIGINAL_REMOVE_RECORDER, new ReplaceRecorder(PARENT_NODE_2, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REMOVE_I)}, // Not the same parent
-            new Object[] {ORIGINAL_REMOVE_RECORDER, new RemoveRecorder(PARENT_NODE_2, OLD_CHILD_NODE, REMOVE_I)}, // Not the same parent
+            new Object[] {
+                "Remove -> Insert: Not the same parent",
+                ORIGINAL_REMOVE_RECORDER,
+                new InsertRecorder(PARENT_NODE_2, NEW_CHILD_NODE_2, REMOVE_I)
+            },
             // - Expecting fail as a remove event cannot be followed by a replace event.
             //      This would mean that an already removed node is then trying to be replaced, which makes no sense
-            new Object[] {ORIGINAL_REMOVE_RECORDER, new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REMOVE_I)},
+            new Object[] {
+                "Remove -> Replace: Remove event should not be followed by a replace event",
+                ORIGINAL_REMOVE_RECORDER,
+                new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE_2, REMOVE_I)
+            },
             // - Expecting fail as a remove event cannot be followed by another remove event.
             //      This would mean that an already removed node is then trying to be removed again, which makes no sense
-            new Object[] {ORIGINAL_REMOVE_RECORDER, new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I)},
+            new Object[] {
+                "Remove -> Remove: Remove event should not be followed by a remove event",
+                ORIGINAL_REMOVE_RECORDER,
+                new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I)
+            },
         };
     }
 
     @Test
     @Parameters(method = "testInValidMergeRewriteEventsParameters")
-    public void testInValidMergeRewriteEvents(final Recorder originalEventRecorder, final Recorder newEventRecorder) {
+    @TestCaseName("Invalid Merge Rewrite Events: {0}")
+    public void testInValidMergeRewriteEvents(@SuppressWarnings("unused") final String testCaseName,
+                                              final Recorder originalEventRecorder,
+                                              final Recorder newEventRecorder) {
         // Record the original event
         originalEventRecorder.record(rewriteEventsRecorder);
 
@@ -196,26 +239,6 @@ public class RewriteEventsRecorderImplTest {
             fail(); // Reach here if the expected exception has not been thrown
         } catch (final Exception ignored) {
             // Expected flow
-        }
-    }
-
-    // xnow document
-    // Expect: remove the original event
-    private void expectRemovedOriginalRewriteEvent(final RewriteEvent[] rewriteEvents,
-                                                   final RewriteEvent[] updatedRewriteEvents,
-                                                   final int rewriteEventIndex) {
-        // Check updated array size
-        assertEquals(rewriteEvents.length - 1, updatedRewriteEvents.length);
-
-        // Check updated array content
-        int rewriteEventsIndex = 0;
-        int updatedRewriteEventsIndex = 0;
-        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
-            if (rewriteEventsIndex == rewriteEventIndex && updatedRewriteEventsIndex == rewriteEventIndex) {
-                rewriteEventsIndex++;
-            } else {
-                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
-            }
         }
     }
 
