@@ -76,13 +76,28 @@ public class RewriteEventsRecorderImplTest {
     private Object testValidMergeRewriteEventsParameters() {
         return new Object[] {
             // `Insert` As Original Event Test Cases
-            new Object[] {
+            new Object[] { // insert -> insert
                 ORIGINAL_INSERT_RECORDER,
                 new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE_2, INSERT_I),
                 createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE_2),
                 INSERT_I,
                 new InsertedNewRewriteEventExpectation()
             },
+            new Object[] { // insert -> replace
+                ORIGINAL_INSERT_RECORDER,
+                new ReplaceRecorder(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, INSERT_I),
+                createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE_2),
+                INSERT_I,
+                new ReplacedOriginalRewriteEventExpectation()
+            },
+            new Object[] { // insert -> remove
+                ORIGINAL_INSERT_RECORDER,
+                new RemoveRecorder(PARENT_NODE, NEW_CHILD_NODE, INSERT_I),
+                null, // not expecting new rewrite event
+                INSERT_I,
+                new RemovedOriginalRewriteEventExpectation()
+            },
+            // `Replace` As Original Event Test Cases
         };
     }
 
@@ -108,58 +123,6 @@ public class RewriteEventsRecorderImplTest {
 
 
 //    // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
-//    // ----------------- `Insert` As Original Event Test Cases ----------------- //
-//    @Test
-//    public void insertInsertMergerTest() {
-//        final int childIndex = INSERT_I;
-//        // Record the original event
-//        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
-//
-//        final RewriteEvent expectedNewRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectInsertedNewRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedNewRewriteEvent, childIndex);
-//    }
-//
-//    @Test
-//    public void insertReplaceMergerTest() {
-//        final int childIndex = INSERT_I;
-//
-//        // Record the original event
-//        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordReplace(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, childIndex);
-//
-//        // Expect: replace the original insert event with a new insert event,
-//        //  with the newChildNode being the newChildNode of the new replace event
-//        final RewriteEvent expectedMergedRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectReplacedOriginalRewriteEvent(rewriteEvents, updatedRewriteEvents, expectedMergedRewriteEvent, childIndex);
-//    }
-//
-//    @Test
-//    public void insertRemoveMergerTest() {
-//        final int childIndex = INSERT_I;
-//
-//        // Record the original event
-//        ORIGINAL_INSERT_RECORDER.record(rewriteEventsRecorder);
-//        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        // Record the new event
-//        rewriteEventsRecorder.recordRemove(PARENT_NODE, NEW_CHILD_NODE, childIndex);
-//
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
-//
-//        expectRemovedOriginalRewriteEvent(rewriteEvents, updatedRewriteEvents, childIndex);
-//    }
-//
 //    // ----------------- `Replace` As Original Event Test Cases ----------------- //
 //    @Test
 //    public void replaceInsertMergerTest() {
@@ -364,7 +327,14 @@ public class RewriteEventsRecorderImplTest {
     private static class RemovedOriginalRewriteEventExpectation implements Expectation {
 
         @Override
-        public void expect(final RewriteEvent[] rewriteEvents, final RewriteEvent[] updatedRewriteEvents, final RewriteEvent expectedNewRewriteEvent, final int rewriteEventIndex) {
+        public void expect(final RewriteEvent[] rewriteEvents,
+                           final RewriteEvent[] updatedRewriteEvents,
+                           final RewriteEvent expectedNewRewriteEvent,
+                           final int rewriteEventIndex) {
+            if (expectedNewRewriteEvent != null) {
+                throw new IllegalArgumentException("Expecting `expectedNewRewriteEvent` to be null");
+            }
+
             // Check updated array size
             assertEquals(rewriteEvents.length - 1, updatedRewriteEvents.length);
 
