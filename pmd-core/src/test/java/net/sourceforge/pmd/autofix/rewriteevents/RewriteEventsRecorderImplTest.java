@@ -1,9 +1,14 @@
+/**
+ * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
+ */
+
 package net.sourceforge.pmd.autofix.rewriteevents;
 
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createInsertRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createRemoveRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.createReplaceRewriteEvent;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -63,6 +68,46 @@ public class RewriteEventsRecorderImplTest {
 
     // -----------------*** Single Rewrite Events Test Cases ***----------------- //
 
+    private Object testSingleRecordParameter() {
+        return new Object[] {
+            // Insert
+            new Object[] {
+                "Insert rewrite event",
+                new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE, INSERT_I),
+                createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE),
+                INSERT_I
+            },
+            // Replace
+            new Object[] {
+                "Replace rewrite event",
+                new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, REPLACE_I),
+                createReplaceRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE, NEW_CHILD_NODE),
+                REPLACE_I
+            },
+            // Remove
+            new Object[] {
+                "Remove rewrite event",
+                new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I),
+                createRemoveRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE),
+                REMOVE_I
+            }
+        };
+    }
+
+    @Test
+    @Parameters(method = "testSingleRecordParameter")
+    @TestCaseName("Single Rewrite Event: <{0}>")
+    public void testSingleRecord(@SuppressWarnings("unused") final String testCaseName,
+                           final Recorder recorder,
+                           final RewriteEvent expectedRewriteEvent,
+                           final int rewriteEventIndex) {
+        // Do the actual record
+        recorder.record(rewriteEventsRecorder);
+        // Event should have been correctly recorded
+        assertTrue(rewriteEventsRecorder.hasRewriteEvents());
+        assertEquals(expectedRewriteEvent, rewriteEventsRecorder.getRewriteEvents()[rewriteEventIndex]);
+    }
+
 //    @Test
 //    public void testRecordRemove() {
 //        // Do the actual record
@@ -74,6 +119,7 @@ public class RewriteEventsRecorderImplTest {
 
     // -----------------** Merge Rewrite Events Test Cases ***----------------- //
     // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
+    @SuppressWarnings("unused") // Used by JUnitParams in `testValidMergeRewriteEvents` test case
     private Object testValidMergeRewriteEventsParameters() {
         return new Object[] {
             // `Insert` As Original Event Test Cases
@@ -153,7 +199,7 @@ public class RewriteEventsRecorderImplTest {
     }
 
     // -----------------* Invalid Merge Rewrite Events Test Cases *----------------- //
-    @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
+    @SuppressWarnings("unused") // Used by JUnitParams in `testInValidMergeRewriteEvents` test case
     private Object testInValidMergeRewriteEventsParameters() {
         final DummyNode node = new DummyNode(0);
         return new Object[] {
