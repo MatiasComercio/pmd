@@ -21,6 +21,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger REMOVE_ORIGINAL_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             return ArrayUtils.remove(rewriteEvents, childIndex);
         }
     };
@@ -28,6 +29,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger INSERT_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             final RewriteEvent mergedRewriteEvent = createInsertRewriteEvent(newRewriteEvent.getParentNode(), childIndex, newRewriteEvent.getNewChildNode());
             rewriteEvents[childIndex] = mergedRewriteEvent;
             return rewriteEvents;
@@ -37,6 +39,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger REPLACE_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             final RewriteEvent mergedRewriteEvent = createReplaceRewriteEvent(newRewriteEvent.getParentNode(), childIndex, oldRewriteEvent.getOldChildNode(), newRewriteEvent.getNewChildNode());
             rewriteEvents[childIndex] = mergedRewriteEvent;
             return rewriteEvents;
@@ -46,6 +49,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger REMOVE_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             final RewriteEvent mergedRewriteEvent = createRemoveRewriteEvent(newRewriteEvent.getParentNode(), childIndex, oldRewriteEvent.getOldChildNode());
             rewriteEvents[childIndex] = mergedRewriteEvent;
             return rewriteEvents;
@@ -55,6 +59,7 @@ public abstract class RewriteEventsMergers {
     private static final RewriteEventsMerger INVALID_MERGER = new RewriteEventsMerger() {
         @Override
         public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+            validate(childIndex, oldRewriteEvent, newRewriteEvent);
             final String msg = String.format("Cannot merge events: <%s> -> <%s>", oldRewriteEvent.getRewriteEventType(), newRewriteEvent.getRewriteEventType());
             throw new IllegalStateException(msg);
         }
@@ -114,11 +119,12 @@ public abstract class RewriteEventsMergers {
             throw new IllegalArgumentException("Parent nodes of both rewrite events should be the same.");
         }
 
-        // TODO: doing validate that old child is the one that should be
-        final Node oldEventOldChild = oldRewriteEvent.getOldChildNode();
+        final Node oldEventNewChild = oldRewriteEvent.getNewChildNode();
         final Node newEventOldChild = newRewriteEvent.getOldChildNode();
-        if (newEventOldChild != null) {
-
+        if (newEventOldChild != null && !newEventOldChild.equals(oldEventNewChild)) {
+            throw new IllegalArgumentException("oldChildNode of the new record event should be " +
+                "the same as the newChildNode of the old record event in order to " +
+                "be able to merge these events");
         }
     }
 }
