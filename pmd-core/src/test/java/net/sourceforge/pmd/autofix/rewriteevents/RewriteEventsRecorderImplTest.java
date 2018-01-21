@@ -19,28 +19,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/*
- * TODO:
- * - Invalid index cases
- */
 @RunWith(JUnitParamsRunner.class)
 public class RewriteEventsRecorderImplTest {
-//
-//    // xnow document
-//    void recordRemove(Node parentNode, Node oldChildNode, int childIndex);
-//
-//    // xnow document
-//    void recordInsert(Node parentNode, Node newChildNode, int childIndex);
-//
-//    // xnow document
-//    void recordReplace(Node parentNode, Node oldChildNode, Node newChildNode, int childIndex);
-//
-//    // xnow document
-//    boolean hasRewriteEvents();
-//
-//    // xnow document
-//    RewriteEvent[] getRewriteEvents();
-
     private static final Node PARENT_NODE = DummyNode.newInstance();
     private static final Node PARENT_NODE_2 = DummyNode.newInstance();
     private static final Node OLD_CHILD_NODE = DummyNode.newInstance();
@@ -50,11 +30,6 @@ public class RewriteEventsRecorderImplTest {
     private static final int INSERT_I = 0;
     private static final int REPLACE_I = 1;
     private static final int REMOVE_I = 2;
-
-//    private static final RewriteEvent INSERT_REWRITE_EVENT = createInsertRewriteEvent(PARENT_NODE, INSERT_I, NEW_CHILD_NODE);
-//    private static final RewriteEvent REPLACE_REWRITE_EVENT = createReplaceRewriteEvent(PARENT_NODE, REPLACE_I, OLD_CHILD_NODE, NEW_CHILD_NODE);
-//    private static final RewriteEvent REMOVE_REWRITE_EVENT = createRemoveRewriteEvent(PARENT_NODE, REMOVE_I, OLD_CHILD_NODE);
-
     private static final Recorder ORIGINAL_INSERT_RECORDER = new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE, INSERT_I);
     private static final Recorder ORIGINAL_REPLACE_RECORDER = new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, REPLACE_I);
     private static final Recorder ORIGINAL_REMOVE_RECORDER = new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
@@ -66,8 +41,9 @@ public class RewriteEventsRecorderImplTest {
         rewriteEventsRecorder = new RewriteEventsRecorderImpl();
     }
 
-    // -----------------*** Single Rewrite Events Test Cases ***----------------- //
-
+    // -----------------** Single Rewrite Events Test Cases **----------------- //
+    // -----------------* Valid cases *----------------- //
+    @SuppressWarnings("unused") // Used by JUnitParams in `testSingleRecord` test case
     private Object testSingleRecordParameter() {
         return new Object[] {
             // Insert
@@ -108,17 +84,36 @@ public class RewriteEventsRecorderImplTest {
         assertEquals(expectedRewriteEvent, rewriteEventsRecorder.getRewriteEvents()[rewriteEventIndex]);
     }
 
-//    @Test
-//    public void testRecordRemove() {
-//        // Do the actual record
-//        rewriteEventsRecorder.recordRemove(PARENT_NODE, OLD_CHILD_NODE, REMOVE_I);
-//
-//        assertTrue(rewriteEventsRecorder.hasRewriteEvents());
-//        assertEquals(REMOVE_REWRITE_EVENT, rewriteEventsRecorder.getRewriteEvents()[REMOVE_I]);
-//    }
+    // -----------------* Invalid cases *----------------- //
+    @SuppressWarnings("unused") // Used by JUnitParams in `testInvalidSingleRecord` test case
+    private Object testInvalidSingleRecordParameters() {
+        return new Object[] {
+            // Insert cases
+            new Object[] {"Insert: Invalid index", new InsertRecorder(PARENT_NODE, NEW_CHILD_NODE, -1)},
+            // Replace cases
+            new Object[] {"Replace: Invalid index", new ReplaceRecorder(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, -1)},
+            // Remove cases
+            new Object[] {"Remove: Invalid index", new RemoveRecorder(PARENT_NODE, OLD_CHILD_NODE, -1)},
+        };
+    }
+
+
+    @Test
+    @Parameters(method = "testInvalidSingleRecordParameters")
+    @TestCaseName("Invalid Single Rewrite Event: {0}")
+    public void testInvalidSingleRecord(@SuppressWarnings("unused") final String testCaseName,
+                                              final Recorder recorder) {
+        try {
+            // Do the actual record
+            recorder.record(rewriteEventsRecorder);
+            fail(); // Reach here if the expected exception has not been thrown
+        } catch (final Exception ignored) {
+            // Expected flow
+        }
+    }
 
     // -----------------** Merge Rewrite Events Test Cases ***----------------- //
-    // -----------------* Valid Merge Rewrite Events Test Cases *----------------- //
+    // -----------------* Valid Cases *----------------- //
     @SuppressWarnings("unused") // Used by JUnitParams in `testValidMergeRewriteEvents` test case
     private Object testValidMergeRewriteEventsParameters() {
         return new Object[] {
@@ -198,9 +193,9 @@ public class RewriteEventsRecorderImplTest {
         expectation.expect(originalRewriteEvents, updatedRewriteEvents, expectedNewRewriteEvent, rewriteEventIndex);
     }
 
-    // -----------------* Invalid Merge Rewrite Events Test Cases *----------------- //
-    @SuppressWarnings("unused") // Used by JUnitParams in `testInValidMergeRewriteEvents` test case
-    private Object testInValidMergeRewriteEventsParameters() {
+    // -----------------* Invalid Cases *----------------- //
+    @SuppressWarnings("unused") // Used by JUnitParams in `testInvalidMergeRewriteEvents` test case
+    private Object testInvalidMergeRewriteEventsParameters() {
         final DummyNode node = new DummyNode(0);
         return new Object[] {
             // Insert cases
@@ -271,9 +266,9 @@ public class RewriteEventsRecorderImplTest {
     }
 
     @Test
-    @Parameters(method = "testInValidMergeRewriteEventsParameters")
+    @Parameters(method = "testInvalidMergeRewriteEventsParameters")
     @TestCaseName("Invalid Merge Rewrite Events: {0}")
-    public void testInValidMergeRewriteEvents(@SuppressWarnings("unused") final String testCaseName,
+    public void testInvalidMergeRewriteEvents(@SuppressWarnings("unused") final String testCaseName,
                                               final Recorder originalEventRecorder,
                                               final Recorder newEventRecorder) {
         // Record the original event
@@ -367,6 +362,7 @@ public class RewriteEventsRecorderImplTest {
         }
     }
 
+    // xnow document
     private interface Recorder {
         void record(RewriteEventsRecorder rewriteEventsRecorder);
     }
