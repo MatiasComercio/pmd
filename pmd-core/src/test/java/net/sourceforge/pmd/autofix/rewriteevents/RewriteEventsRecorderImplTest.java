@@ -72,182 +72,205 @@ public class RewriteEventsRecorderImplTest {
         final int childIndex = INSERT_I;
         // Record the original event
         rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
-        final RewriteEvent[] originalRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
 
         // Record the new event
         rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
+
         final RewriteEvent expectedNewRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
         final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
         // Expect: the new insert event has been inserted in the given index and the other events shifted to the right
 
         // Check updated array size
-        assertEquals(originalRewriteEvents.length + 1, updatedRewriteEvents.length);
+        assertEquals(rewriteEvents.length + 1, updatedRewriteEvents.length);
 
         // Check updated array content
         int rewriteEventsIndex = 0;
         int updatedRewriteEventsIndex = 0;
-        while (rewriteEventsIndex < originalRewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
+        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
             if (rewriteEventsIndex == childIndex && updatedRewriteEventsIndex == childIndex) {
                 assertEquals(expectedNewRewriteEvent, updatedRewriteEvents[updatedRewriteEventsIndex++]);
             } else {
-                assertEquals(originalRewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
+                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
             }
         }
     }
 
-//    @Test
-//    public void insertReplaceMergerTest() {
-//        final int childIndex = INSERT_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(INSERT, REPLACE);
-//        // NEW_CHILD_NODE is the oldChildNode of the new event
-//        final RewriteEvent newRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE, NEW_CHILD_NODE_2);
-//        final RewriteEvent expectedMergedRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, INSERT_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: replace the original insert event with a new insert event, with the newChildNode being the newChildNode of the new replace event
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        for (int i = 0; i < updatedRewriteEvents.length; i++) {
-//            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
-//            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
-//        }
-//    }
-//
-//    @Test
-//    public void insertRemoveMergerTest() {
-//        final int childIndex = INSERT_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(INSERT, REMOVE);
-//        // NEW_CHILD_NODE is the oldChildNode of the new event
-//        final RewriteEvent newRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, INSERT_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: remove the original insert event
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length - 1, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        int rewriteEventsIndex = 0;
-//        int updatedRewriteEventsIndex = 0;
-//        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
-//            if (rewriteEventsIndex == childIndex && updatedRewriteEventsIndex == childIndex) {
-//                rewriteEventsIndex++;
-//            } else {
-//                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
-//            }
-//        }
-//    }
-//
-//    // ----------------- `Replace` As Original Event Test Cases ----------------- //
-//    @Test
-//    public void replaceInsertMergerTest() {
-//        final int childIndex = REPLACE_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REPLACE, INSERT);
-//        final RewriteEvent newRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REPLACE_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: the new insert event has been inserted in the given index and the other events shifted to the right
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length + 1, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        int rewriteEventsIndex = 0;
-//        int updatedRewriteEventsIndex = 0;
-//        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
-//            if (rewriteEventsIndex == childIndex && updatedRewriteEventsIndex == childIndex) {
-//                assertEquals(newRewriteEvent, updatedRewriteEvents[updatedRewriteEventsIndex++]);
-//            } else {
-//                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
-//            }
-//        }
-//    }
-//
-//    @Test
-//    public void replaceReplaceMergerTest() {
-//        final int childIndex = REPLACE_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REPLACE, REPLACE);
-//        // NEW_CHILD_NODE is the oldChildNode of the new event
-//        final RewriteEvent newRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE, NEW_CHILD_NODE_2);
-//        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REPLACE_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: replace the original replace event with a new replace event,
-//        //  with the oldChildNode being the oldChildNode of the original replace event,
-//        //  and with the newChildNode being the newChildNode of the new replace event
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        for (int i = 0; i < updatedRewriteEvents.length; i++) {
-//            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
-//            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
-//        }
-//    }
-//
-//    @Test
-//    public void replaceRemoveMergerTest() {
-//        final int childIndex = REPLACE_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REPLACE, REMOVE);
-//        // NEW_CHILD_NODE is the oldChildNode of the new event
-//        final RewriteEvent newRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE);
-//        final RewriteEvent expectedMergedRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REPLACE_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: replace the original replace event with a new remove event,
-//        //  with the oldChildNode being the oldChildNode of the original replace event
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        for (int i = 0; i < updatedRewriteEvents.length; i++) {
-//            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
-//            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
-//        }
-//    }
-//
-//    // ----------------- `Remove` As Original Event Test Cases ----------------- //
-//    @Test
-//    public void removeInsertMergerTest() {
-//        final int childIndex = REMOVE_I;
-//        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(REMOVE, INSERT);
-//        final RewriteEvent newRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
-//        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
-//
-//        // Do the actual merge
-//        final RewriteEvent[] updatedRewriteEvents = rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, REMOVE_REWRITE_EVENT, newRewriteEvent);
-//
-//        // Expect: replace the original remove event with a replace event,
-//        //  with the oldChildNode being the oldChildNode of the original remove event,
-//        //  and with the newChildNode being the newChildNode of the new insert event
-//
-//        // Check updated array size
-//        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
-//
-//        // Check updated array content
-//        for (int i = 0; i < updatedRewriteEvents.length; i++) {
-//            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
-//            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
-//        }
-//    }
-//
-//    // removeReplace & removeRemove are both invalid cases; check below
-//
+    @Test
+    public void insertReplaceMergerTest() {
+        final int childIndex = INSERT_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordReplace(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, childIndex);
+
+        final RewriteEvent expectedMergedRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: replace the original insert event with a new insert event, with the newChildNode being the newChildNode of the new replace event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
+
+        // Check updated array content
+        for (int i = 0; i < updatedRewriteEvents.length; i++) {
+            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
+            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
+        }
+    }
+
+    @Test
+    public void insertRemoveMergerTest() {
+        final int childIndex = INSERT_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordRemove(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: remove the original insert event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length - 1, updatedRewriteEvents.length);
+
+        // Check updated array content
+        int rewriteEventsIndex = 0;
+        int updatedRewriteEventsIndex = 0;
+        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
+            if (rewriteEventsIndex == childIndex && updatedRewriteEventsIndex == childIndex) {
+                rewriteEventsIndex++;
+            } else {
+                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
+            }
+        }
+    }
+
+    // ----------------- `Replace` As Original Event Test Cases ----------------- //
+    @Test
+    public void replaceInsertMergerTest() {
+        final int childIndex = REPLACE_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
+
+        final RewriteEvent newRewriteEvent = createInsertRewriteEvent(PARENT_NODE, childIndex, NEW_CHILD_NODE_2);
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: the new insert event has been inserted in the given index and the other events shifted to the right
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length + 1, updatedRewriteEvents.length);
+
+        // Check updated array content
+        int rewriteEventsIndex = 0;
+        int updatedRewriteEventsIndex = 0;
+        while (rewriteEventsIndex < rewriteEvents.length && updatedRewriteEventsIndex < updatedRewriteEvents.length) {
+            if (rewriteEventsIndex == childIndex && updatedRewriteEventsIndex == childIndex) {
+                assertEquals(newRewriteEvent, updatedRewriteEvents[updatedRewriteEventsIndex++]);
+            } else {
+                assertEquals(rewriteEvents[rewriteEventsIndex++], updatedRewriteEvents[updatedRewriteEventsIndex++]);
+            }
+        }
+    }
+
+    @Test
+    public void replaceReplaceMergerTest() {
+        final int childIndex = REPLACE_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordReplace(PARENT_NODE, NEW_CHILD_NODE, NEW_CHILD_NODE_2, childIndex);
+
+        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: replace the original replace event with a new replace event,
+        //  with the oldChildNode being the oldChildNode of the original replace event,
+        //  and with the newChildNode being the newChildNode of the new replace event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
+
+        // Check updated array content
+        for (int i = 0; i < updatedRewriteEvents.length; i++) {
+            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
+            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
+        }
+    }
+
+    @Test
+    public void replaceRemoveMergerTest() {
+        final int childIndex = REPLACE_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordReplace(PARENT_NODE, OLD_CHILD_NODE, NEW_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordRemove(PARENT_NODE, NEW_CHILD_NODE, childIndex);
+
+        final RewriteEvent expectedMergedRewriteEvent = createRemoveRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE);
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: replace the original replace event with a new remove event,
+        //  with the oldChildNode being the oldChildNode of the original replace event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
+
+        // Check updated array content
+        for (int i = 0; i < updatedRewriteEvents.length; i++) {
+            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
+            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
+        }
+    }
+
+    // ----------------- `Remove` As Original Event Test Cases ----------------- //
+    @Test
+    public void removeInsertMergerTest() {
+        final int childIndex = REMOVE_I;
+
+        // Record the original event
+        rewriteEventsRecorder.recordRemove(PARENT_NODE, OLD_CHILD_NODE, childIndex);
+        final RewriteEvent[] rewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Record the new event
+        rewriteEventsRecorder.recordInsert(PARENT_NODE, NEW_CHILD_NODE_2, childIndex);
+
+        final RewriteEvent expectedMergedRewriteEvent = createReplaceRewriteEvent(PARENT_NODE, childIndex, OLD_CHILD_NODE, NEW_CHILD_NODE_2);
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+
+        // Expect: replace the original remove event with a replace event,
+        //  with the oldChildNode being the oldChildNode of the original remove event,
+        //  and with the newChildNode being the newChildNode of the new insert event
+
+        // Check updated array size
+        assertEquals(rewriteEvents.length, updatedRewriteEvents.length);
+
+        // Check updated array content
+        for (int i = 0; i < updatedRewriteEvents.length; i++) {
+            final RewriteEvent expectedRewriteEvent = i == childIndex ? expectedMergedRewriteEvent : rewriteEvents[i];
+            assertEquals(expectedRewriteEvent, updatedRewriteEvents[i]);
+        }
+    }
+
+    // removeReplace & removeRemove are both invalid cases; check below
+
 //    // -----------------* Invalid Merge Rewrite Events Test Cases *----------------- //
 //
 //    @SuppressWarnings("unused") // Used by JUnitParams in `invalidMergeRewriteEventsTest` test case
