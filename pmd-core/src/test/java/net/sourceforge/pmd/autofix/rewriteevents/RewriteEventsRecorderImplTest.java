@@ -389,8 +389,15 @@ public class RewriteEventsRecorderImplTest {
         }
     }
 
-    // xnow document
+    /**
+     * Interface representing a record event that will be performed over a {@code RewriteEventsRecorder} instance.
+     * 
+     */
     private interface Recorder {
+        /**
+         * Record a rewrite event using the given {@code rewriteEventsRecorder} instance.
+         * @param rewriteEventsRecorder The instance used to record a rewrite event.
+         */
         void record(RewriteEventsRecorder rewriteEventsRecorder);
     }
 
