@@ -32,7 +32,7 @@ public class AttributeAxisIteratorTest {
             Attribute attribute = it.next();
             atts.put(attribute.getName(), attribute);
         }
-        Assert.assertEquals(7, atts.size());
+        Assert.assertEquals(8, atts.size());
         Assert.assertTrue(atts.containsKey("BeginColumn"));
         Assert.assertTrue(atts.containsKey("BeginLine"));
         Assert.assertTrue(atts.containsKey("FindBoundary"));
@@ -40,5 +40,6 @@ public class AttributeAxisIteratorTest {
         Assert.assertTrue(atts.containsKey("SingleLine"));
         Assert.assertTrue(atts.containsKey("EndColumn"));
         Assert.assertTrue(atts.containsKey("EndLine"));
+        Assert.assertTrue(atts.containsKey("ChildrenChanged"));
     }
 }
