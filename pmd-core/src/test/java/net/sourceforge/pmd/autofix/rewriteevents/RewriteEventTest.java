@@ -39,24 +39,20 @@ public class RewriteEventTest {
             new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, newChildNode, 0, false},
             // Invalid cases
             // - Insert
-            new Object[] {RewriteEventType.INSERT, parentNode, null, null, 0, true},
-            new Object[] {RewriteEventType.INSERT, parentNode, oldChildNode, oldChildNode, 0, true},
-            new Object[] {RewriteEventType.INSERT, null, oldChildNode, newChildNode, 0, true},
-            new Object[] {RewriteEventType.INSERT, parentNode, oldChildNode, newChildNode, -1, true},
+            new Object[] {RewriteEventType.INSERT, parentNode, null, null, 0, true}, // Null equal children
+            new Object[] {RewriteEventType.INSERT, parentNode, oldChildNode, oldChildNode, 0, true}, // Non-null equal children
+            new Object[] {RewriteEventType.INSERT, null, oldChildNode, newChildNode, 0, true}, // Null parent
+            new Object[] {RewriteEventType.INSERT, parentNode, oldChildNode, newChildNode, -1, true}, // Invalid Index
             // - Remove
-            new Object[] {RewriteEventType.REMOVE, parentNode, null, null, 0, true},
+            new Object[] {RewriteEventType.REMOVE, parentNode, null, null, 0, true}, // Null equal children
             new Object[] {RewriteEventType.REMOVE, parentNode, oldChildNode, oldChildNode, 0, true},
             new Object[] {RewriteEventType.REMOVE, null, oldChildNode, newChildNode, 0, true},
             new Object[] {RewriteEventType.REMOVE, parentNode, oldChildNode, newChildNode, -1, true},
             // - Replace
-            new Object[] {RewriteEventType.REPLACE, parentNode, null, newChildNode, 0, true},
-            new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, null, 0, true},
-            new Object[] {RewriteEventType.REPLACE, parentNode, null, null, 0, true},
-            new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, oldChildNode, 0, true},
-            new Object[] {RewriteEventType.REPLACE, null, oldChildNode, newChildNode, 0, true},
-            new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, newChildNode, -1, true},
-            // - General cases
-            new Object[] {null, parentNode, oldChildNode, newChildNode, 0, true},
+            new Object[] {RewriteEventType.REPLACE, parentNode, null, null, 0, true}, // Null equal children
+            new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, oldChildNode, 0, true}, // Non-null equal children
+            new Object[] {RewriteEventType.REPLACE, null, oldChildNode, newChildNode, 0, true}, // Null parent
+            new Object[] {RewriteEventType.REPLACE, parentNode, oldChildNode, newChildNode, -1, true}, // Invalid Index
         };
     }
 
