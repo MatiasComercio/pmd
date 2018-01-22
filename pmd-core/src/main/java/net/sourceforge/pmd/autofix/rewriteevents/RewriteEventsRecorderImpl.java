@@ -134,7 +134,16 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         RewriteEvent[] recordMerge(RewriteEvent[] rewriteEvents, int rewriteEventIndex, RewriteEvent oldRewriteEvent, RewriteEvent newRewriteEvent);
     }
 
-    // xnow document
+    /**
+     * <p>
+     *   Class implementing all the different merging policies based on the type of {@code oldRewriteEvent}
+     *      and {@code newRewriteEvent}.
+     * </p>
+     * <p>
+     *   Each merging policy should be obtained with the method {@code getRewriteEventsMerger},
+     *   and not directly accessed.
+     * </p>
+     */
     private static abstract class RewriteEventsMergers {
         private static final RewriteEventsMerger INSERT_NEW_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
             @Override
@@ -225,6 +234,13 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             REWRITE_EVENTS_MERGERS[iRemove][iRemove] = INVALID_MERGER;
         }
 
+        /**
+         *
+         * @param oldEventType The old event type.
+         * @param newEventType The new event type.
+         * @return The rewrite events merger that implements the correct merging policy for the given
+         *          {@code oldEventType} and {@code newEventType}.
+         */
         private static RewriteEventsMerger getRewriteEventsMerger(final RewriteEventType oldEventType, final RewriteEventType newEventType) {
             return REWRITE_EVENTS_MERGERS[oldEventType.getIndex()][newEventType.getIndex()];
         }
