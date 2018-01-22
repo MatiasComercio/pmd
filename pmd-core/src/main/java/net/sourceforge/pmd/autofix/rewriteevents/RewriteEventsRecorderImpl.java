@@ -4,26 +4,26 @@
 
 package net.sourceforge.pmd.autofix.rewriteevents;
 
-import java.util.Arrays;
-import java.util.Objects;
-import net.sourceforge.pmd.lang.ast.Node;
-import org.apache.commons.lang3.ArrayUtils;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newInsertRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newRemoveRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newReplaceRewriteEvent;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.INSERT;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
+import java.util.Arrays;
+import java.util.Objects;
+import net.sourceforge.pmd.lang.ast.Node;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Implementation of {@link RewriteEventsRecorder}, that records modifications as {@link RewriteEvent}s.
  * <p>
- *  This class is not able to record rewrite events for different nodes, so each node may hold its own instance.
+ * This class is not able to record rewrite events for different nodes, so each node may hold its own instance.
  * </p>
  * <p>
- *   Rewrite events occurring on the same index are merged straight away, so at all moment only one rewrite event
- *   is hold for a given index. This helps to understand exactly what kind of change has the node suffer,
- *   independently of how many times it has been modified.
+ * Rewrite events occurring on the same index are merged straight away, so at all moment only one rewrite event
+ * is hold for a given index. This helps to understand exactly what kind of change has the node suffer,
+ * independently of how many times it has been modified.
  * </p>
  */
 public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
@@ -111,24 +111,25 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
     private interface RewriteEventsMerger {
         /**
          * <p>
-         *  Record a rewrite event at the given {@code rewriteEventIndex} on the given {@code rewriteEvents} array.
+         * Record a rewrite event at the given {@code rewriteEventIndex} on the given {@code rewriteEvents} array.
          * </p>
          * <p>
-         *  This rewrite event is the result of merging the {@code oldRewriteEvent} with the {@code newRewriteEvent}.
-         *  The merging policy may vary depending on the type of rewrite event that each of them (old an new)
-         *    represent.
+         * This rewrite event is the result of merging the {@code oldRewriteEvent} with the {@code newRewriteEvent}.
+         * The merging policy may vary depending on the type of rewrite event that each of them (old an new)
+         * represent.
          * </p>
          * <p>
-         *  Interface's implementations are in charge of carrying out the correct merge policy in each case.
+         * Interface's implementations are in charge of carrying out the correct merge policy in each case.
          * </p>
          * <p>
-         *   <strong>The original {@code rewriteEvents} array is not modified</strong>; instead, a new updated copy
-         *      of the given array is returned.
+         * <strong>The original {@code rewriteEvents} array is not modified</strong>; instead, a new updated copy
+         * of the given array is returned.
          * </p>
-         * @param rewriteEvents The rewrite events where to record the merged rewrite event.
+         *
+         * @param rewriteEvents     The rewrite events where to record the merged rewrite event.
          * @param rewriteEventIndex The index where to record the merged rewrite event
-         * @param oldRewriteEvent The old rewrite event to be merged with the new one.
-         * @param newRewriteEvent The new rewrite event to be merged with the old one.
+         * @param oldRewriteEvent   The old rewrite event to be merged with the new one.
+         * @param newRewriteEvent   The new rewrite event to be merged with the old one.
          * @return An updated copy of the given {@code rewriteEvents}.
          */
         RewriteEvent[] recordMerge(RewriteEvent[] rewriteEvents, int rewriteEventIndex, RewriteEvent oldRewriteEvent, RewriteEvent newRewriteEvent);
@@ -136,12 +137,12 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
 
     /**
      * <p>
-     *   Class implementing all the different merging policies based on the type of {@code oldRewriteEvent}
-     *      and {@code newRewriteEvent}.
+     * Class implementing all the different merging policies based on the type of {@code oldRewriteEvent}
+     * and {@code newRewriteEvent}.
      * </p>
      * <p>
-     *   Each merging policy should be obtained with the method {@code getRewriteEventsMerger},
-     *   and not directly accessed.
+     * Each merging policy should be obtained with the method {@code getRewriteEventsMerger},
+     * and not directly accessed.
      * </p>
      */
     private static abstract class RewriteEventsMergers {
@@ -201,6 +202,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         };
 
         private static final RewriteEventsMerger[][] REWRITE_EVENTS_MERGERS;
+
         static {
             final int size = RewriteEventType.values().length;
             REWRITE_EVENTS_MERGERS = new RewriteEventsMerger[size][size];
@@ -235,11 +237,10 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         }
 
         /**
-         *
          * @param oldEventType The old event type.
          * @param newEventType The new event type.
          * @return The rewrite events merger that implements the correct merging policy for the given
-         *          {@code oldEventType} and {@code newEventType}.
+         * {@code oldEventType} and {@code newEventType}.
          */
         private static RewriteEventsMerger getRewriteEventsMerger(final RewriteEventType oldEventType, final RewriteEventType newEventType) {
             return REWRITE_EVENTS_MERGERS[oldEventType.getIndex()][newEventType.getIndex()];
@@ -248,7 +249,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         private static void validate(final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
             final int oldEventIndex = oldRewriteEvent.getChildNodeIndex();
             final int newEventIndex = newRewriteEvent.getChildNodeIndex();
-            if (childIndex !=  oldEventIndex || childIndex != newEventIndex) {
+            if (childIndex != oldEventIndex || childIndex != newEventIndex) {
                 final String msg = String.format("Invalid childIndex. childIndex: <%d>, " +
                         "oldRewriteEvent.childIndex: <%d>, newRewriteEvent.childIndex: <%d>",
                     childIndex, oldEventIndex, newEventIndex);

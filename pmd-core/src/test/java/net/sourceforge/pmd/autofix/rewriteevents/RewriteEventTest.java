@@ -4,14 +4,14 @@
 
 package net.sourceforge.pmd.autofix.rewriteevents;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link RewriteEventTest}.

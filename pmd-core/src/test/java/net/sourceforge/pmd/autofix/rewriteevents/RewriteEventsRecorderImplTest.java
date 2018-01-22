@@ -74,9 +74,9 @@ public class RewriteEventsRecorderImplTest {
     @Parameters(method = "testSingleRecordParameter")
     @TestCaseName("Single Rewrite Event: <{0}>")
     public void testSingleRecord(@SuppressWarnings("unused") final String testCaseName,
-                           final Recorder recorder,
-                           final RewriteEvent expectedRewriteEvent,
-                           final int rewriteEventIndex) {
+                                 final Recorder recorder,
+                                 final RewriteEvent expectedRewriteEvent,
+                                 final int rewriteEventIndex) {
         // Do the actual record
         recorder.record(rewriteEventsRecorder);
         // Event should have been correctly recorded
@@ -102,7 +102,7 @@ public class RewriteEventsRecorderImplTest {
     @Parameters(method = "testInvalidSingleRecordParameters")
     @TestCaseName("Invalid Single Rewrite Event: {0}")
     public void testInvalidSingleRecord(@SuppressWarnings("unused") final String testCaseName,
-                                              final Recorder recorder) {
+                                        final Recorder recorder) {
         try {
             // Do the actual record
             recorder.record(rewriteEventsRecorder);
@@ -292,19 +292,19 @@ public class RewriteEventsRecorderImplTest {
     private interface Expectation {
         /**
          * <p>
-         *  Execute all expectations/validations for a given test case, contrasting the {@code originalRewriteEvents}
-         *  array with the {@code updatedRewriteEvents} array, checking if the expected modification (which should have
-         *  occurred at the {@code rewriteEventIndex}) have been carried out.
+         * Execute all expectations/validations for a given test case, contrasting the {@code originalRewriteEvents}
+         * array with the {@code updatedRewriteEvents} array, checking if the expected modification (which should have
+         * occurred at the {@code rewriteEventIndex}) have been carried out.
          * </p>
          * <p>
-         *  If {@code expectedNewRewriteEvent} is not null, then it is expected that the {@code updatedRewriteEvents}
-         *  array contains that event at the {@code rewriteEventIndex} position.
+         * If {@code expectedNewRewriteEvent} is not null, then it is expected that the {@code updatedRewriteEvents}
+         * array contains that event at the {@code rewriteEventIndex} position.
          * </p>
          *
-         * @param originalRewriteEvents The original rewrite events.
-         * @param updatedRewriteEvents The update rewrite events.
+         * @param originalRewriteEvents   The original rewrite events.
+         * @param updatedRewriteEvents    The update rewrite events.
          * @param expectedNewRewriteEvent The expected new rewrite event (may be null).
-         * @param rewriteEventIndex The index where the expected rewrite event modification should have been performed.
+         * @param rewriteEventIndex       The index where the expected rewrite event modification should have been performed.
          */
         void expect(RewriteEvent[] originalRewriteEvents, RewriteEvent[] updatedRewriteEvents, RewriteEvent expectedNewRewriteEvent, int rewriteEventIndex);
     }
@@ -391,11 +391,11 @@ public class RewriteEventsRecorderImplTest {
 
     /**
      * Interface representing a record event that will be performed over a {@code RewriteEventsRecorder} instance.
-     * 
      */
     private interface Recorder {
         /**
          * Record a rewrite event using the given {@code rewriteEventsRecorder} instance.
+         *
          * @param rewriteEventsRecorder The instance used to record a rewrite event.
          */
         void record(RewriteEventsRecorder rewriteEventsRecorder);

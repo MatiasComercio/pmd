@@ -9,16 +9,16 @@ import net.sourceforge.pmd.lang.ast.Node;
 
 /**
  * <p>
- *   Describe a modification over a {@link Node} so as to be able to track changes over it.
+ * Describe a modification over a {@link Node} so as to be able to track changes over it.
  * </p>
  * <p>
- *   The modification is described by specifying the node on which the modification has occurred ({@code parentNode}),
- *      the old child node ({@code oldChildNode}), the new child node ({@code newChildNode}) and the index of the
- *      child node being modified ({@code childNodeIndex}).
+ * The modification is described by specifying the node on which the modification has occurred ({@code parentNode}),
+ * the old child node ({@code oldChildNode}), the new child node ({@code newChildNode}) and the index of the
+ * child node being modified ({@code childNodeIndex}).
  * </p>
  * <p>
- *   The {@code rewriteEventType} is obtained based on the provided values for
- *   {@code oldChildNode} and {@code newChildNode} (which may be null).
+ * The {@code rewriteEventType} is obtained based on the provided values for
+ * {@code oldChildNode} and {@code newChildNode} (which may be null).
  * </p>
  */
 public class RewriteEvent {
