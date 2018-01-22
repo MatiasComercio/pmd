@@ -310,8 +310,8 @@ public class RewriteEventsRecorderImplTest {
     }
 
     /**
-     * This class expects that the new rewrite event has been inserted in the given index and
-     * that the following rewrite events have been shifted to the right.
+     * This class expects the {@code expectedNewRewriteEvent} to have been inserted at the given
+     * {@code rewriteEventIndex} position, and the following rewrite events to have been shifted to the right.
      */
     private static class InsertedNewRewriteEventExpectation implements Expectation {
 
@@ -336,8 +336,10 @@ public class RewriteEventsRecorderImplTest {
         }
     }
 
-    // xnow document
-    // Expect: replace the original event with the new expectedNewRewriteEvent, at the given rewriteEventIndex
+    /**
+     * This class expects the original rewrite event at the given {@code rewriteEventIndex} position
+     * to have been replaced with the new {@code expectedNewRewriteEvent}.
+     */
     private static class ReplacedOriginalRewriteEventExpectation implements Expectation {
 
         @Override
@@ -356,8 +358,10 @@ public class RewriteEventsRecorderImplTest {
         }
     }
 
-    // xnow document
-    // Expect: remove the original event
+    /**
+     * This class expects the original rewrite event at the given {@code rewriteEventIndex} position
+     * to have been removed.
+     */
     private static class RemovedOriginalRewriteEventExpectation implements Expectation {
 
         @Override
