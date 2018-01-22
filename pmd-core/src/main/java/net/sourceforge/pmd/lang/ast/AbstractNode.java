@@ -42,7 +42,10 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private RewriteEventsRecorder rewriteEventsRecorder; // xnow document
+    /**
+     * Hold all children's modification events.
+     */
+    private RewriteEventsRecorder rewriteEventsRecorder;
 
     public AbstractNode(int id) {
         this.id = id;
