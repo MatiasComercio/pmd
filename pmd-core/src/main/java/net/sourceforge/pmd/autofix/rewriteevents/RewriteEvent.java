@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.autofix.rewriteevents;
 
 import java.util.Objects;
+
 import net.sourceforge.pmd.lang.ast.Node;
 
 /**
@@ -87,11 +88,11 @@ public class RewriteEvent {
             return false;
         }
         final RewriteEvent rewriteEvent = (RewriteEvent) o;
-        return childNodeIndex == rewriteEvent.childNodeIndex &&
-            rewriteEventType == rewriteEvent.rewriteEventType &&
-            Objects.equals(parentNode, rewriteEvent.parentNode) &&
-            Objects.equals(oldChildNode, rewriteEvent.oldChildNode) &&
-            Objects.equals(newChildNode, rewriteEvent.newChildNode);
+        return childNodeIndex == rewriteEvent.childNodeIndex
+            && rewriteEventType == rewriteEvent.rewriteEventType
+            && Objects.equals(parentNode, rewriteEvent.parentNode)
+            && Objects.equals(oldChildNode, rewriteEvent.oldChildNode)
+            && Objects.equals(newChildNode, rewriteEvent.newChildNode);
     }
 
     @Override

@@ -7,10 +7,10 @@ package net.sourceforge.pmd.lang.ast;
 
 import java.util.List;
 
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
 
 /**

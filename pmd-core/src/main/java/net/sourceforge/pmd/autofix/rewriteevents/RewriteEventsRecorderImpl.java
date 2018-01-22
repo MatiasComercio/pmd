@@ -10,10 +10,13 @@ import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newR
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.INSERT;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
+
 import java.util.Arrays;
 import java.util.Objects;
-import net.sourceforge.pmd.lang.ast.Node;
+
 import org.apache.commons.lang3.ArrayUtils;
+
+import net.sourceforge.pmd.lang.ast.Node;
 
 /**
  * Implementation of {@link RewriteEventsRecorder}, that records modifications as {@link RewriteEvent}s.
@@ -98,11 +101,11 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
         }
     }
 
-    private RewriteEvent[] recordMergedRewriteEvents(final RewriteEvent[] rewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
+    private RewriteEvent[] recordMergedRewriteEvents(final RewriteEvent[] pRewriteEvents, final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
         final RewriteEventType oldRewriteEventType = oldRewriteEvent.getRewriteEventType();
         final RewriteEventType newRewriteEventType = newRewriteEvent.getRewriteEventType();
         final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(oldRewriteEventType, newRewriteEventType);
-        return rewriteEventsMerger.recordMerge(rewriteEvents, childIndex, oldRewriteEvent, newRewriteEvent);
+        return rewriteEventsMerger.recordMerge(pRewriteEvents, childIndex, oldRewriteEvent, newRewriteEvent);
     }
 
     /**
@@ -145,7 +148,7 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
      * and not directly accessed.
      * </p>
      */
-    private static abstract class RewriteEventsMergers {
+    private abstract static class RewriteEventsMergers {
         private static final RewriteEventsMerger INSERT_NEW_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
             @Override
             public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
@@ -250,8 +253,8 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             final int oldEventIndex = oldRewriteEvent.getChildNodeIndex();
             final int newEventIndex = newRewriteEvent.getChildNodeIndex();
             if (childIndex != oldEventIndex || childIndex != newEventIndex) {
-                final String msg = String.format("Invalid childIndex. childIndex: <%d>, " +
-                        "oldRewriteEvent.childIndex: <%d>, newRewriteEvent.childIndex: <%d>",
+                final String msg = String.format("Invalid childIndex. childIndex: <%d>, "
+                        + "oldRewriteEvent.childIndex: <%d>, newRewriteEvent.childIndex: <%d>",
                     childIndex, oldEventIndex, newEventIndex);
                 throw new IllegalArgumentException(msg);
             }
@@ -265,9 +268,9 @@ public class RewriteEventsRecorderImpl implements RewriteEventsRecorder {
             final Node oldEventNewChild = oldRewriteEvent.getNewChildNode();
             final Node newEventOldChild = newRewriteEvent.getOldChildNode();
             if (newEventOldChild != null && !newEventOldChild.equals(oldEventNewChild)) {
-                throw new IllegalArgumentException("oldChildNode of the new record event should be " +
-                    "the same as the newChildNode of the old record event in order to " +
-                    "be able to merge these events");
+                throw new IllegalArgumentException("oldChildNode of the new record event should be "
+                    + "the same as the newChildNode of the old record event in order to "
+                    + "be able to merge these events");
             }
         }
     }

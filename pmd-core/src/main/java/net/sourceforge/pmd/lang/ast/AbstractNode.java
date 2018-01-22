@@ -7,21 +7,20 @@ package net.sourceforge.pmd.lang.ast;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorder;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorderImpl;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jaxen.BaseXPath;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorder;
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorderImpl;
 import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
