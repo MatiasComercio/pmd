@@ -38,7 +38,7 @@ public interface RewriteEventsRecorder {
 
     /**
      *
-     * @return {@code true} if this instance holds any rewrite event; {@code false} otherwise/
+     * @return {@code true} if this instance holds any rewrite event; {@code false} otherwise.
      */
     boolean hasRewriteEvents();
 

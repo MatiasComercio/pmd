@@ -318,9 +318,15 @@ public interface Node {
      */
     void replace(Node newChild, int index);
 
-    // xnow document
+    /**
+     *
+     * @return {@code true} if any of this node's children have been modified; {@code false} otherwise
+     */
     boolean hasChildrenChanged();
 
-    // xnow document
+    /**
+     *
+     * @return A copy of all the {@link RewriteEvent}s that occurred over this node's children (may be null).
+     */
     RewriteEvent[] getChildrenRewriteEvents();
 }
