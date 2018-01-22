@@ -9,9 +9,11 @@ import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
 import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
+import org.junit.Test;
+
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
-import org.junit.Test;
 
 public class RewriteEventFactoryTest {
     private static final Node PARENT_NODE = DummyNode.newInstance();

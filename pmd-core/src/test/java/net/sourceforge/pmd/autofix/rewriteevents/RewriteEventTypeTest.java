@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.autofix.rewriteevents;
 
 import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
 public class RewriteEventTypeTest {
