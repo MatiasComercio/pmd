@@ -69,24 +69,10 @@ public class AbstractNodeTest {
         return new DummyNode(nextId());
     }
 
-    private static void addChild(final Node parent, final Node child) {
-        parent.jjtAddChild(child, parent.jjtGetNumChildren()); // Append child at the end
-        child.jjtSetParent(parent);
-    }
-
     @Before
     public void setUpSampleNodeTree() {
         id = 0;
-        rootNode = newDummyNode();
-
-        for (int i = 0; i < NUM_CHILDREN; i++) {
-            final Node child = newDummyNode();
-            for (int j = 0; j < NUM_GRAND_CHILDREN; j++) {
-                final Node grandChild = newDummyNode();
-                addChild(child, grandChild);
-            }
-            addChild(rootNode, child);
-        }
+        rootNode = DummyNode.newAST(NUM_CHILDREN, NUM_GRAND_CHILDREN);
     }
 
     // ----------------- Remove Test Cases ----------------- //
