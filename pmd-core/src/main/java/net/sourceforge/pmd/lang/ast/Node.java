@@ -329,4 +329,9 @@ public interface Node {
      * @return A copy of all the {@link RewriteEvent}s that occurred over this node's children (may be null).
      */
     RewriteEvent[] getChildrenRewriteEvents();
+
+    // xnow document all
+    List<String> getChildrenTextOperations();
+
+    List<String> getTextOperations();
 }

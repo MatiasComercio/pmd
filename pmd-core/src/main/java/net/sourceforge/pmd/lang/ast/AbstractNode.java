@@ -544,6 +544,7 @@ public abstract class AbstractNode implements Node {
         return rewriteEventsRecorder.getRewriteEvents();
     }
 
+    @Override
     public List<String> getChildrenTextOperations() {
         final List<String> textOperations = new LinkedList<>();
 
@@ -557,6 +558,7 @@ public abstract class AbstractNode implements Node {
         return textOperations;
     }
 
+    @Override
     public List<String> getTextOperations() {
         if (!haveChildrenChanged()) {
             // As the children of this node have not change themselves,
