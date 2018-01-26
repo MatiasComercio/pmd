@@ -4,6 +4,10 @@
 
 package net.sourceforge.pmd.autofix.rewriteevents;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 
 import net.sourceforge.pmd.lang.ast.Node;
@@ -98,5 +102,42 @@ public class RewriteEvent {
     @Override
     public int hashCode() {
         return Objects.hash(rewriteEventType, parentNode, oldChildNode, newChildNode, childNodeIndex);
+    }
+
+    @Override
+    public String toString() {
+        return "RewriteEvent{"
+            + "rewriteEventType=" + rewriteEventType
+            + ", parentNode=" + parentNode
+            + ", oldChildNode=" + oldChildNode
+            + ", newChildNode=" + newChildNode
+            + ", childNodeIndex=" + childNodeIndex
+            + '}';
+    }
+
+    public List<String> getTextOperation() {
+        switch (rewriteEventType) {
+        case REMOVE: return getRemoveTextOperation();
+        case INSERT: return getInsertTextOperation();
+        case REPLACE: return getReplaceTextOperation();
+        default: throw new IllegalStateException("Not a valid rewrite event.");
+        }
+    }
+
+    private List<String> getRemoveTextOperation() {
+        final Node node = oldChildNode;
+        final String op = String.format("REMOVE - beginLine: <%s>, beginColumn: <%s>, endLine: <%s>, endColumn: <%s>",
+            node.getBeginLine(), node.getBeginColumn(), node.getEndLine(), node.getEndColumn());
+        return Collections.singletonList(op);
+    }
+
+    private List<String> getInsertTextOperation() {
+        return new LinkedList<>(); // TODO
+    }
+
+    private List<String> getReplaceTextOperation() {
+        final List<String> textOperations = getRemoveTextOperation();
+        textOperations.addAll(getInsertTextOperation());
+        return textOperations;
     }
 }
