@@ -6,6 +6,7 @@ package net.sourceforge.pmd.lang.ast;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
@@ -541,5 +542,45 @@ public abstract class AbstractNode implements Node {
     @Override
     public RewriteEvent[] getChildrenRewriteEvents() {
         return rewriteEventsRecorder.getRewriteEvents();
+    }
+
+    public List<String> getChildrenTextOperations() {
+        final List<String> textOperations = new LinkedList<>();
+
+        if (children == null) {
+            return textOperations;
+        }
+
+        for (final Node child : children) {
+            textOperations.addAll(child.getTextOperations());
+        }
+        return textOperations;
+    }
+
+    public List<String> getTextOperations() {
+        if (!haveChildrenChanged()) {
+            // As the children of this node have not change themselves,
+            // we keep digging for children's children changes
+            return getChildrenTextOperations();
+        }
+
+        // At least one child has changed -> let's pick up all the text operations
+        final List<String> textOperations = new LinkedList<>();
+        final RewriteEvent[] childrenRewriteEvents = getChildrenRewriteEvents();
+        for (int i = 0; i < childrenRewriteEvents.length; i++) {
+            final RewriteEvent childRewriteEvent = childrenRewriteEvents[i];
+            if (childRewriteEvent == null) {
+                // Child itself has not changed, but its own children may have changed.
+                // Let's collect those changes then.
+                final Node childNode = jjtGetChild(i);
+                if (childNode != null) { // xnow: think in which conditions childNode may be null
+                    textOperations.addAll(childNode.getTextOperations());
+                }
+            } else {
+                // This child has changes => let's pick them as a text operation
+                textOperations.addAll(childRewriteEvent.getTextOperation());
+            }
+        }
+        return textOperations;
     }
 }
