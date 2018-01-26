@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.lang;
 
 import java.io.Writer;
+import java.util.List;
 
 import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 import net.sourceforge.pmd.lang.rule.RuleViolationFactory;
@@ -97,4 +98,7 @@ public interface LanguageVersionHandler {
 
 
     DFAGraphRule getDFAGraphRule();
+
+    // xnow document
+    VisitorStarter getNodeStringifier(List<String> textOperations);
 }

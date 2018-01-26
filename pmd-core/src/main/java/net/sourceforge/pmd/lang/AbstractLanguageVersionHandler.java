@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.lang;
 
 import java.io.Writer;
+import java.util.List;
 
 import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 
@@ -63,5 +64,10 @@ public abstract class AbstractLanguageVersionHandler implements LanguageVersionH
     @Override
     public DFAGraphRule getDFAGraphRule() {
         return null;
+    }
+
+    @Override
+    public VisitorStarter getNodeStringifier(final List<String> textOperations) {
+        return VisitorStarter.DUMMY;
     }
 }

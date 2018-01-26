@@ -4,11 +4,57 @@
 
 package net.sourceforge.pmd.autofix.rewriter;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Node;
 
-// xnow document
-public class ASTRewriter { // xnow implements ASTNodeVisitor or sth like that?
-    void visit(final Node node) {
+// xnow document class & all methods
+public class ASTRewriter {
+    private final LanguageVersionHandler languageVersionHandler;
 
+    public static ASTRewriter newInstance(final LanguageVersionHandler languageVersionHandler) {
+        return new ASTRewriter(languageVersionHandler);
+    }
+
+    private ASTRewriter(final LanguageVersionHandler pLanguageVersionHandler) {
+        this.languageVersionHandler = pLanguageVersionHandler;
+    }
+
+    public List<String> getChildrenTextOperations(final Node node) {
+        final List<String> textOperations = new LinkedList<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            textOperations.addAll(getTextOperations(node.jjtGetChild(i)));
+        }
+        return textOperations;
+    }
+
+    public List<String> getTextOperations(final Node node) {
+        if (!node.haveChildrenChanged()) {
+            // As the children of this node have not change themselves,
+            // we keep digging for children's children changes
+            return getChildrenTextOperations(node);
+        }
+
+        // At least one child has changed -> let's pick up all the text operations
+        final List<String> textOperations = new LinkedList<>();
+        final RewriteEvent[] childrenRewriteEvents = node.getChildrenRewriteEvents();
+        for (int i = 0; i < childrenRewriteEvents.length; i++) {
+            final RewriteEvent childRewriteEvent = childrenRewriteEvents[i];
+            if (childRewriteEvent == null) {
+                // Child itself has not changed, but its own children may have changed.
+                // Let's collect those changes then.
+                final Node childNode = node.jjtGetChild(i);
+                if (childNode != null) { // xnow: think in which conditions childNode may be null
+                    textOperations.addAll(getTextOperations(childNode));
+                }
+            } else {
+                // This child has changes => let's pick them as a text operation
+                textOperations.addAll(childRewriteEvent.getTextOperation(languageVersionHandler));
+            }
+        }
+        return textOperations;
     }
 }
