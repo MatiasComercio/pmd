@@ -18,7 +18,7 @@ import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.DumpFacade;
 import net.sourceforge.pmd.lang.java.ast.JavaNode;
-import net.sourceforge.pmd.lang.java.autofixes.rewriter.ASTJavaStringifierFacade;
+import net.sourceforge.pmd.lang.java.autofix.rewriter.ASTJavaStringifierFacade;
 import net.sourceforge.pmd.lang.java.dfa.DataFlowFacade;
 import net.sourceforge.pmd.lang.java.dfa.JavaDFAGraphRule;
 import net.sourceforge.pmd.lang.java.multifile.MultifileVisitorFacade;

@@ -2,7 +2,7 @@
  * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
  */
 
-package net.sourceforge.pmd.lang.java.autofixes.rewriter;
+package net.sourceforge.pmd.lang.java.autofix.rewriter;
 
 import java.util.List;
 

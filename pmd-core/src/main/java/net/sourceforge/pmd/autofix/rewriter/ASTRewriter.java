@@ -12,7 +12,7 @@ import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Node;
 
 // xnow document class & all methods
-public class ASTRewriter {
+public class ASTRewriter { // xnow: implement interface
     private final LanguageVersionHandler languageVersionHandler;
 
     public static ASTRewriter newInstance(final LanguageVersionHandler languageVersionHandler) {
