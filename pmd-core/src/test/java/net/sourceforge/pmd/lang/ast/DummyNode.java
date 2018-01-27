@@ -9,8 +9,16 @@ public class DummyNode extends AbstractNode {
         super(id);
     }
 
+    private DummyNode(int id, int beginLine, int endLine, int beginColumn, int endColumn) {
+        super(id, beginLine, endLine, beginColumn, endColumn);
+    }
+
     public static Node newInstance() {
         return new DummyNode(0);
+    }
+
+    public static Node newCompleteInstance() {
+        return new DummyNode(0, 0, 0, 0, 0);
     }
 
     @Override
@@ -49,7 +57,7 @@ public class DummyNode extends AbstractNode {
      * @return The described AST.
      */
     public static Node newAST(final int... childrenPerLayer) {
-        final Node rootNode = newInstance();
+        final Node rootNode = newCompleteInstance();
         newAST(rootNode, 0, childrenPerLayer);
         return rootNode;
     }
@@ -60,7 +68,7 @@ public class DummyNode extends AbstractNode {
         }
 
         for (int childI = 0; childI < childrenPerLayer[currentLayer]; childI++) {
-            final Node childNode = newInstance();
+            final Node childNode = new DummyNode(0, currentLayer, currentLayer, childI, childI);
             newAST(childNode, currentLayer + 1, childrenPerLayer);
             addChild(parentNode, childNode);
         }

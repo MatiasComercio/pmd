@@ -43,7 +43,7 @@ public class ASTRewriterTest {
     }
 
     @Test
-    public void testGetTextOperations() { // TODO: doing
+    public void testGetTextOperations() {
         System.out.println(AST_REWRITER.getTextOperations(rootNode));
     }
 }

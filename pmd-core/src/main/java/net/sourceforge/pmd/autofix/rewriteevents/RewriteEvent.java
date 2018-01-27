@@ -4,12 +4,8 @@
 
 package net.sourceforge.pmd.autofix.rewriteevents;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 
-import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Node;
 
 /**
@@ -113,34 +109,5 @@ public class RewriteEvent {
             + ", newChildNode=" + newChildNode
             + ", childNodeIndex=" + childNodeIndex
             + '}';
-    }
-
-    // xnow document ALL
-    public List<String> getTextOperation(final LanguageVersionHandler languageVersionHandler) {
-        switch (rewriteEventType) {
-        case REMOVE: return getRemoveTextOperation();
-        case INSERT: return getInsertTextOperation(languageVersionHandler);
-        case REPLACE: return getReplaceTextOperation(languageVersionHandler);
-        default: throw new IllegalStateException("Not a valid rewrite event.");
-        }
-    }
-
-    private List<String> getRemoveTextOperation() {
-        final Node node = oldChildNode;
-        final String op = String.format("REMOVE - beginLine: <%s>, beginColumn: <%s>, endLine: <%s>, endColumn: <%s>",
-            node.getBeginLine(), node.getBeginColumn(), node.getEndLine(), node.getEndColumn());
-        return Collections.singletonList(op);
-    }
-
-    private List<String> getInsertTextOperation(final LanguageVersionHandler languageVersionHandler) {
-        final List<String> textOperations = new LinkedList<>();
-        languageVersionHandler.getNodeStringifier(textOperations).start(newChildNode);
-        return textOperations;
-    }
-
-    private List<String> getReplaceTextOperation(final LanguageVersionHandler languageVersionHandler) {
-        final List<String> textOperations = getRemoveTextOperation();
-        textOperations.addAll(getInsertTextOperation(languageVersionHandler));
-        return textOperations;
     }
 }
