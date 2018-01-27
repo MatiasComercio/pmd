@@ -4,6 +4,9 @@
 
 package net.sourceforge.pmd.autofix.rewriter;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Before;
@@ -16,11 +19,8 @@ import net.sourceforge.pmd.lang.ast.Node;
 public class ASTRewriterTest {
     private static final int NUM_CHILDREN = 3;
     private static final int NUM_GRANDCHILDREN = 2;
-    private static final ASTRewriter AST_REWRITER;
-
-    static {
-        AST_REWRITER = ASTRewriter.newInstance(new DummyRewriteEventTranslatorImpl());
-    }
+    private static final RewriteEventTranslator TRANSLATOR = new DummyRewriteEventTranslatorImpl();
+    private static final ASTRewriter AST_REWRITER = ASTRewriter.newInstance(TRANSLATOR);
 
     private static class DummyRewriteEventTranslatorImpl implements RewriteEventTranslator {
         private static final NodeStringifier STRINGIFIER = new DummyNodeStringifier();
@@ -56,19 +56,30 @@ public class ASTRewriterTest {
     }
 
     private Node rootNode;
+    private List<String> expectedTextOperations;
 
     @Before
     public void createASTWithRewriteOperations() {
         rootNode = DummyNode.newAST(NUM_CHILDREN, NUM_GRANDCHILDREN);
-        rootNode.insert(DummyNode.newInstance(-2), 0); // Expect: "Insert: -2"
+        expectedTextOperations = new LinkedList<>();
+        final Node insertNode = DummyNode.newInstance(-2);
+        final Node replaceNode = DummyNode.newInstance(-3);
+        rootNode.insert(insertNode, 0); // Expect: "Insert: -2"
         // Expect: "Replace: 1 -> -3" as the first child (id 1) is being shifted due to the insert operation
-        rootNode.replace(DummyNode.newInstance(-3), 1);
+        rootNode.replace(replaceNode, 1);
         // Expect: "Remove: 4" which is the index of the second child, that has been also shifted due to the insertion
         rootNode.remove(2);
+
+        final RewriteEvent[] rewriteEvents = rootNode.getChildrenRewriteEvents();
+        for (final RewriteEvent rewriteEvent : rewriteEvents) {
+            if (rewriteEvent != null) {
+                TRANSLATOR.translateToTextOperations(rewriteEvent, expectedTextOperations);
+            }
+        }
     }
 
     @Test
     public void testGetTextOperations() {
-        System.out.println(AST_REWRITER.getTextOperations(rootNode));
+        assertEquals(expectedTextOperations, AST_REWRITER.getTextOperations(rootNode));
     }
 }
