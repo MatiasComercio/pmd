@@ -9,9 +9,9 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.DummyLanguageModule;
 import net.sourceforge.pmd.lang.LanguageVersionHandler;
-import net.sourceforge.pmd.lang.VisitorStarter;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 
@@ -24,11 +24,12 @@ public class ASTRewriterTest {
 
     private Node rootNode;
 
+    // TODO: implement custom stringifier for dummy node
     private static LanguageVersionHandler getDummyLanguageVersionHandler() {
         return new DummyLanguageModule.Handler() {
             @Override
-            public VisitorStarter getNodeStringifier(final List<String> textOperations) {
-                return super.getNodeStringifier(textOperations); // TODO: implement custom stringifier for dummy node
+            public void translateRewriteEventToTextOperations(final RewriteEvent rewriteEvent, final List<String> textOperations) {
+                super.translateRewriteEventToTextOperations(rewriteEvent, textOperations);
             }
         };
     }

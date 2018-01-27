@@ -17,10 +17,6 @@ public class DummyNode extends AbstractNode {
         return new DummyNode(0);
     }
 
-    public static Node newCompleteInstance() {
-        return new DummyNode(0, 0, 0, 0, 0);
-    }
-
     @Override
     public String toString() {
         return "dummyNode";
@@ -57,7 +53,7 @@ public class DummyNode extends AbstractNode {
      * @return The described AST.
      */
     public static Node newAST(final int... childrenPerLayer) {
-        final Node rootNode = newCompleteInstance();
+        final Node rootNode = newInstance();
         newAST(rootNode, 0, childrenPerLayer);
         return rootNode;
     }
@@ -68,7 +64,7 @@ public class DummyNode extends AbstractNode {
         }
 
         for (int childI = 0; childI < childrenPerLayer[currentLayer]; childI++) {
-            final Node childNode = new DummyNode(0, currentLayer, currentLayer, childI, childI);
+            final Node childNode = newInstance();
             newAST(childNode, currentLayer + 1, childrenPerLayer);
             addChild(parentNode, childNode);
         }

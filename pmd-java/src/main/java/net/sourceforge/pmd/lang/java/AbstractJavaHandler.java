@@ -7,6 +7,7 @@ package net.sourceforge.pmd.lang.java;
 import java.io.Writer;
 import java.util.List;
 
+import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.AbstractLanguageVersionHandler;
 import net.sourceforge.pmd.lang.DataFlowHandler;
 import net.sourceforge.pmd.lang.LanguageRegistry;
