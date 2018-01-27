@@ -8,19 +8,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.Node;
 
 // xnow document class & all methods
 public class ASTRewriter { // xnow: implement interface
-    private final LanguageVersionHandler languageVersionHandler;
+    private final RewriteEventTranslator rewriteEventTranslator;
 
-    private ASTRewriter(final LanguageVersionHandler pLanguageVersionHandler) {
-        this.languageVersionHandler = pLanguageVersionHandler;
+    private ASTRewriter(final RewriteEventTranslator pRewriteEventTranslator) {
+        this.rewriteEventTranslator = pRewriteEventTranslator;
     }
 
-    public static ASTRewriter newInstance(final LanguageVersionHandler languageVersionHandler) {
-        return new ASTRewriter(languageVersionHandler);
+    public static ASTRewriter newInstance(final RewriteEventTranslator rewriteEventTranslator) {
+        return new ASTRewriter(rewriteEventTranslator);
     }
 
     private List<String> getChildrenTextOperations(final Node node) {
@@ -52,7 +51,7 @@ public class ASTRewriter { // xnow: implement interface
                 }
             } else {
                 // This child has changes => let's pick them as a text operation
-                languageVersionHandler.translateRewriteEventToTextOperations(childRewriteEvent, textOperations);
+                rewriteEventTranslator.translateToTextOperations(childRewriteEvent, textOperations);
             }
         }
         return textOperations;

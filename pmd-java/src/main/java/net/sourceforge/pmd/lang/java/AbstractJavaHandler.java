@@ -5,9 +5,7 @@
 package net.sourceforge.pmd.lang.java;
 
 import java.io.Writer;
-import java.util.List;
 
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.AbstractLanguageVersionHandler;
 import net.sourceforge.pmd.lang.DataFlowHandler;
 import net.sourceforge.pmd.lang.LanguageRegistry;
@@ -19,7 +17,6 @@ import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.DumpFacade;
 import net.sourceforge.pmd.lang.java.ast.JavaNode;
-import net.sourceforge.pmd.lang.java.autofix.rewriter.ASTJavaStringifierFacade;
 import net.sourceforge.pmd.lang.java.dfa.DataFlowFacade;
 import net.sourceforge.pmd.lang.java.dfa.JavaDFAGraphRule;
 import net.sourceforge.pmd.lang.java.multifile.MultifileVisitorFacade;
@@ -124,15 +121,5 @@ public abstract class AbstractJavaHandler extends AbstractLanguageVersionHandler
     @Override
     public DFAGraphRule getDFAGraphRule() {
         return new JavaDFAGraphRule();
-    }
-
-    @Override
-    public VisitorStarter getNodeStringifier(final List<String> textOperations) {
-        return new VisitorStarter() {
-            @Override
-            public void start(final Node rootNode) {
-                new ASTJavaStringifierFacade().initializeWith((ASTCompilationUnit) rootNode, textOperations);
-            }
-        };
     }
 }

@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.util.List;
 
 import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewriter.RewriteEventTranslator;
 import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 import net.sourceforge.pmd.lang.rule.RuleViolationFactory;
 
@@ -101,7 +102,5 @@ public interface LanguageVersionHandler {
     DFAGraphRule getDFAGraphRule();
 
     // xnow document ALL
-    void translateRewriteEventToTextOperations(RewriteEvent rewriteEvent, List<String> textOperations);
-
-    VisitorStarter getNodeStringifier(List<String> textOperations);
+    RewriteEventTranslator getRewriteEventTranslator(RewriteEvent rewriteEvent, List<String> textOperations);
 }
