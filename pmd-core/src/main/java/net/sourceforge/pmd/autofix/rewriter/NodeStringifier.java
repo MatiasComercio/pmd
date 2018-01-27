@@ -6,12 +6,14 @@ package net.sourceforge.pmd.autofix.rewriter;
 
 import net.sourceforge.pmd.lang.ast.Node;
 
+import jdk.internal.joptsimple.internal.Strings;
+
 // xnow document
 public interface NodeStringifier {
     NodeStringifier DUMMY = new NodeStringifier() {
         @Override
         public String stringify(final Node node) {
-            return null;
+            return Strings.EMPTY; // does nothing - dummy implementation.
         }
     };
 

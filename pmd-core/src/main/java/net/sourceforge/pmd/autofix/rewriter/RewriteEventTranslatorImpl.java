@@ -10,14 +10,12 @@ import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.ast.Node;
 
 // xnow document all
-public abstract class AbstractRewriteEventTranslator implements RewriteEventTranslator {
+public class RewriteEventTranslatorImpl implements RewriteEventTranslator {
     private final NodeStringifier nodeStringifier;
 
-    protected AbstractRewriteEventTranslator() {
-        nodeStringifier = getNodeStringifier();
+    public RewriteEventTranslatorImpl(final NodeStringifier pNodeStringifier) {
+        this.nodeStringifier = pNodeStringifier;
     }
-
-    protected abstract NodeStringifier getNodeStringifier();
 
     @Override
     public void translateToTextOperations(final RewriteEvent rewriteEvent, final List<String> textOperations) {

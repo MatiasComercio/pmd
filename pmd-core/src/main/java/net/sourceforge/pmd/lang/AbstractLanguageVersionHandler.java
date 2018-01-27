@@ -8,9 +8,9 @@ import java.io.Writer;
 import java.util.List;
 
 import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.autofix.rewriter.AbstractRewriteEventTranslator;
 import net.sourceforge.pmd.autofix.rewriter.NodeStringifier;
 import net.sourceforge.pmd.autofix.rewriter.RewriteEventTranslator;
+import net.sourceforge.pmd.autofix.rewriter.RewriteEventTranslatorImpl;
 import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 
 /**
@@ -73,11 +73,6 @@ public abstract class AbstractLanguageVersionHandler implements LanguageVersionH
     @Override
     public RewriteEventTranslator getRewriteEventTranslator(final RewriteEvent rewriteEvent,
                                                             final List<String> textOperations) {
-        return new AbstractRewriteEventTranslator() {
-            @Override
-            protected NodeStringifier getNodeStringifier() {
-                return NodeStringifier.DUMMY;
-            }
-        };
+        return new RewriteEventTranslatorImpl(NodeStringifier.DUMMY);
     }
 }
