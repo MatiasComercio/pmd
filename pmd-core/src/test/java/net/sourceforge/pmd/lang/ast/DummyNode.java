@@ -17,6 +17,10 @@ public class DummyNode extends AbstractNode {
         return new DummyNode(0);
     }
 
+    public static Node newInstance(int id) {
+        return new DummyNode(id);
+    }
+
     @Override
     public String toString() {
         return "dummyNode";
@@ -48,26 +52,44 @@ public class DummyNode extends AbstractNode {
      *          \
      *           o
      * </pre>
-     *
+     * <p>All nodes are given an id, starting from 0 (which represents the root node), and they are DFS incremented.</p>
+     * <p>Following the previous example, nodes' ids would be assigned as follows:</p>
+     * <pre>
+     *           2
+     *          /
+     *         1-3
+     *        / \
+     *       /   4
+     *      0
+     *       \   6
+     *        \ /
+     *         5-7
+     *          \
+     *           8
+     * </pre>
      * @param childrenPerLayer The number of children per layer.
      * @return The described AST.
      */
     public static Node newAST(final int... childrenPerLayer) {
-        final Node rootNode = newInstance();
-        newAST(rootNode, 0, childrenPerLayer);
+        final int startingId = 0;
+        final Node rootNode = newInstance(startingId);
+        newAST(rootNode, 0, childrenPerLayer, startingId + 1);
         return rootNode;
     }
 
-    private static void newAST(final Node parentNode, final int currentLayer, final int[] childrenPerLayer) {
+    private static int newAST(final Node parentNode, final int currentLayer, final int[] childrenPerLayer,
+                              final int startingId) {
+        int id = startingId;
         if (currentLayer >= childrenPerLayer.length) {
-            return;
+            return id;
         }
 
         for (int childI = 0; childI < childrenPerLayer[currentLayer]; childI++) {
-            final Node childNode = newInstance();
-            newAST(childNode, currentLayer + 1, childrenPerLayer);
+            final Node childNode = newInstance(id++);
+            id = newAST(childNode, currentLayer + 1, childrenPerLayer, id);
             addChild(parentNode, childNode);
         }
+        return id;
     }
 
     private static void addChild(final Node parent, final Node child) {

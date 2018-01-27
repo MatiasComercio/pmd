@@ -10,36 +10,60 @@ import org.junit.Before;
 import org.junit.Test;
 
 import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.lang.DummyLanguageModule;
-import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 
 public class ASTRewriterTest {
-    private static final LanguageVersionHandler DUMMY_LANGUAGE_VERSION_HANDLER = getDummyLanguageVersionHandler();
-    private static final ASTRewriter AST_REWRITER = ASTRewriter.newInstance(DUMMY_LANGUAGE_VERSION_HANDLER);
-
     private static final int NUM_CHILDREN = 3;
-    private static final int NUM_GRANDCHILDREN = 3;
+    private static final int NUM_GRANDCHILDREN = 2;
+    private static final ASTRewriter AST_REWRITER;
+
+    static {
+        AST_REWRITER = ASTRewriter.newInstance(new DummyRewriteEventTranslatorImpl());
+    }
+
+    private static class DummyRewriteEventTranslatorImpl implements RewriteEventTranslator {
+        private static final NodeStringifier STRINGIFIER = new DummyNodeStringifier();
+
+        @Override
+        public void translateToTextOperations(final RewriteEvent rewriteEvent, final List<String> textOperations) {
+            switch (rewriteEvent.getRewriteEventType()) {
+            case INSERT:
+                textOperations.add(String.format("INSERT: %s",
+                    STRINGIFIER.stringify(rewriteEvent.getNewChildNode())));
+                break;
+            case REPLACE:
+                textOperations.add(String.format("REPLACE: %s => %s",
+                    STRINGIFIER.stringify(rewriteEvent.getOldChildNode()),
+                    STRINGIFIER.stringify(rewriteEvent.getNewChildNode())));
+                break;
+            case REMOVE:
+                textOperations.add(String.format("REMOVE: %s",
+                    STRINGIFIER.stringify(rewriteEvent.getOldChildNode())));
+                break;
+            default:
+                throw new IllegalStateException();
+            }
+        }
+    }
+
+    private static class DummyNodeStringifier implements NodeStringifier {
+
+        @Override
+        public String stringify(final Node node) {
+            return String.valueOf(node.jjtGetId());
+        }
+    }
 
     private Node rootNode;
-
-    // TODO: implement custom stringifier for dummy node
-    private static LanguageVersionHandler getDummyLanguageVersionHandler() {
-        return new DummyLanguageModule.Handler() {
-            @Override
-            public RewriteEventTranslator getRewriteEventTranslator(final RewriteEvent rewriteEvent, final List<String> textOperations) {
-                super.getRewriteEventTranslator(rewriteEvent, textOperations);
-            }
-        };
-    }
 
     @Before
     public void createASTWithRewriteOperations() {
         rootNode = DummyNode.newAST(NUM_CHILDREN, NUM_GRANDCHILDREN);
-        final Node newDummyNode = DummyNode.newInstance();
-        rootNode.insert(newDummyNode, 0);
-        rootNode.replace(newDummyNode, 1);
+        rootNode.insert(DummyNode.newInstance(-2), 0); // Expect: "Insert: -2"
+        // Expect: "Replace: 1 -> -3" as the first child (id 1) is being shifted due to the insert operation
+        rootNode.replace(DummyNode.newInstance(-3), 1);
+        // Expect: "Remove: 4" which is the index of the second child, that has been also shifted due to the insertion
         rootNode.remove(2);
     }
 
