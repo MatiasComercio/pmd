@@ -6,6 +6,7 @@ package net.sourceforge.pmd;
 
 import java.util.List;
 
+import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.Language;
 import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.ParserOptions;
@@ -414,4 +415,6 @@ public interface Rule extends PropertySource {
      * @return A new exact copy of this rule
      */
     Rule deepCopy();
+
+    RuleViolationAutoFixer getRuleViolationAutoFixer();
 }
