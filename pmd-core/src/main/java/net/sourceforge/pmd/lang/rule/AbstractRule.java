@@ -10,6 +10,7 @@ import java.util.List;
 import net.sourceforge.pmd.Rule;
 import net.sourceforge.pmd.RuleContext;
 import net.sourceforge.pmd.RulePriority;
+import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.Language;
 import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.ParserOptions;
@@ -466,5 +467,10 @@ public abstract class AbstractRule extends AbstractPropertySource implements Rul
         }
         
         return rule;
+    }
+
+    @Override
+    public RuleViolationAutoFixer getRuleViolationAutoFixer() {
+        return null; // TODO: tmp; should return a dummy so as to compare with it if it is not implemented yet
     }
 }
