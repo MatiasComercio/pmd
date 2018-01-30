@@ -4,8 +4,8 @@
 
 package net.sourceforge.pmd.lang.java.rule.bestpractices;
 
+import java.io.StringReader;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +14,8 @@ import org.jaxen.JaxenException;
 
 import net.sourceforge.pmd.autofix.NodeFixer;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
+import net.sourceforge.pmd.lang.ast.CharStream;
+import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTForInit;
@@ -26,6 +28,8 @@ import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableInitializer;
+import net.sourceforge.pmd.lang.java.ast.JavaParser;
+import net.sourceforge.pmd.lang.java.ast.JavaParserTokenManager;
 import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
 import net.sourceforge.pmd.lang.java.symboltable.VariableNameDeclaration;
 import net.sourceforge.pmd.lang.java.typeresolution.TypeHelper;
@@ -107,15 +111,23 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
     }
 
     private static class ListLoopFix implements RuleViolationAutoFixer {
-        private static String structure(final String varType, final String varName, final String collectionName) {
+        private static String stream(final String varType, final String varName, final String collectionName) {
             return String.format("for (%s %s : %s) { ; }", varType, varName, collectionName);
         }
 
         @Override
         public void apply(final Node node, final NodeFixer nodeFixer) {
             final ASTForStatement forStatement = (ASTForStatement) node;
-            forStatement.removeChild(0); // remove ForInit
-            forStatement.removeChild(1); // remove Expression
+
+            final String varType = ""; // TODO
+            final String varName = ""; // TODO
+            final String collectionName = ""; // TODO
+
+            final String stream = stream(varType, varName, collectionName);
+            final CustomJavaParser<ASTForStatement> javaParser = new CustomJavaParser<>(stream);
+            final ASTForStatement forEachStatement = javaParser.getNode();
+            forStatement.setChild(forEachStatement.jjtGetChild(0), 0); // replace ForInit with LocalVariableDeclaration
+            forStatement.setChild(forEachStatement.jjtGetChild(1), 1); // replace Expression with new Expression
             forStatement.removeChild(2); // remove ForUpdate
             // Leave the Statement as it will be the same for both for
 
@@ -132,6 +144,16 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
     }
 
+    private static class CustomJavaParser<T> extends JavaParser {
+
+        CustomJavaParser(final String stream) {
+            super(new JavaCharStream(new StringReader(stream)));
+        }
+
+        public T getNode() {
+            return (T) jjtree.popNode();
+        }
+    }
 
     /* Finds the declaration of the index variable and its occurrences */
     private Entry<VariableNameDeclaration, List<NameOccurrence>> getIndexVarDeclaration(ASTForInit init, ASTForUpdate update) {
