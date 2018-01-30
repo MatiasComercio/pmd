@@ -82,36 +82,6 @@ public abstract class AbstractNode implements Node {
         setChild(child, index);
     }
 
-    /**
-     * Set the given child at the given index.
-     * - If index < 0, IllegalArgumentException is thrown
-     * - Else, if index >= jjtGetNumChildren, the children array is extended so as to perform the insertion.
-     * - Else, the child at the given index, if any, is detached form this parent and replaced by the given child.
-     * @param child The child to be set.
-     * @param index The position where to set the given child.
-     * @throws IllegalArgumentException If the index is negative.
-     */
-    private void setChild(final Node child, final int index) { // (partial insert) & replace
-        Node oldChild = null;
-        if (index < 0) {
-            throw new IllegalArgumentException("index should be non-negative");
-        } else if (children == null) { // insert, for sure
-            children = new Node[index + 1];
-        } else if (index >= children.length) { // insert, for sure
-            Node[] newChildren = new Node[index + 1];
-            System.arraycopy(children, 0, newChildren, 0, children.length);
-            children = newChildren;
-        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
-            oldChild = children[index];
-        }
-        children[index] = child;
-        child.jjtSetChildIndex(index);
-        child.jjtSetParent(this);
-        if (oldChild != null) {
-            oldChild.jjtSetParent(null);
-        }
-    }
-
     @Override
     public void jjtSetChildIndex(int index) {
         childIndex = index;
@@ -447,12 +417,12 @@ public abstract class AbstractNode implements Node {
         // Detach current node of its parent, if any
         final Node parent = jjtGetParent();
         if (parent != null) {
-            parent.remove(jjtGetChildIndex());
+            parent.removeChild(jjtGetChildIndex());
         }
     }
 
     @Override
-    public void remove(final int index) {
+    public void removeChild(final int index) {
         if (0 > index || index >= jjtGetNumChildren()) {
             return;
         }
@@ -474,8 +444,43 @@ public abstract class AbstractNode implements Node {
         // removeChildEvent(this, oldChild, index); // TODO [autofix]
     }
 
+    /**
+     * Set the given child at the given index.
+     * - If index < 0, IllegalArgumentException is thrown
+     * - Else, if index >= jjtGetNumChildren, the children array is extended so as to perform the insertion.
+     * - Else, the child at the given index, if any, is detached form this parent and replaced by the given child.
+     * @param child The child to be set.
+     * @param index The position where to set the given child.
+     * @throws IllegalArgumentException If the index is negative.
+     */
+    @Override // TODO: review comments0
+    public void setChild(final Node child, final int index) { // (partial insert) & replace
+        Node oldChild = null;
+        if (index < 0) {
+            throw new IllegalArgumentException("index should be non-negative");
+        } else if (children == null) { // insert, for sure
+            children = new Node[index + 1];
+        } else if (index >= children.length) { // insert, for sure
+            Node[] newChildren = new Node[index + 1];
+            System.arraycopy(children, 0, newChildren, 0, children.length);
+            children = newChildren;
+        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
+            oldChild = children[index];
+        }
+        children[index] = child;
+        child.jjtSetChildIndex(index);
+        // Attach new child node to its parent
+        child.jjtSetParent(this);
+        // Detach old child node, if any, of its parent
+        if (oldChild != null) {
+            oldChild.jjtSetParent(null);
+        }
+        // Finally, report the replace event
+        // replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
+    }
+
     @Override
-    public int insert(final Node newChild, final int index) {
+    public int insertChild(final Node newChild, final int index) {
         Objects.requireNonNull(newChild);
         if (index < 0) {
             return index;
@@ -492,26 +497,6 @@ public abstract class AbstractNode implements Node {
         // This may be outside this scope, just to avoid calling it when using the jjtAddChild (just call it when rewriting indeed)
         // insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
         return insertionIndex;
-    }
-
-    @Override
-    public void replace(final Node newChild, final int index) {
-        Objects.requireNonNull(newChild);
-        if (0 > index || index >= jjtGetNumChildren()) {
-            return;
-        }
-
-        // Replace the old child with the new one
-        // Null child may have been caused due to an invalid insertion/addition
-        final Node oldChild = Objects.requireNonNull(children[index]);
-        children[index] = newChild;
-        newChild.jjtSetChildIndex(index);
-        // Attach new child node to its parent
-        newChild.jjtSetParent(this);
-        // Detach old child node of its parent
-        oldChild.jjtSetParent(null);
-        // Finally, report the replace event
-        // replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
     }
 
     private void makeSpaceForNewChild(final int index) {

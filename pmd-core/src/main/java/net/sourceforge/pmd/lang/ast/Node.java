@@ -54,6 +54,7 @@ public interface Node {
      * @param child The child to add
      * @param index The index to which the child will be added
      */
+    @Deprecated
     void jjtAddChild(Node child, int index);
 
     /**
@@ -272,6 +273,7 @@ public interface Node {
     /**
      * Remove the current node from its parent, if any.
      */
+    @Deprecated
     void remove();
 
     /**
@@ -280,7 +282,7 @@ public interface Node {
      * @param index
      *          The index of the child to be removed
      */
-    void remove(int index);
+    void removeChild(int index);
 
     /**
      * <p>
@@ -302,7 +304,7 @@ public interface Node {
      *          or a negative value if no operation have been performed.
      * @throws NullPointerException if {@code newChild} is null
      */
-    int insert(Node newChild, int index);
+    int insertChild(Node newChild, int index);
 
     /**
      * Replace the child in the given index with this new child.
@@ -315,5 +317,5 @@ public interface Node {
      * @param index The position where to replace the current child with the new one
      * @throws NullPointerException if {@code newChild} is null
      */
-    void replace(Node newChild, int index);
+    void setChild(Node newChild, int index); // TODO: update documentation
 }
