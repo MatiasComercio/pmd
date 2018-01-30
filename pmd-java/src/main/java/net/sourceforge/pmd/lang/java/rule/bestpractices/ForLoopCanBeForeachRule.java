@@ -5,12 +5,15 @@
 package net.sourceforge.pmd.lang.java.rule.bestpractices;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jaxen.JaxenException;
 
+import net.sourceforge.pmd.autofix.NodeFixer;
+import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTForInit;
@@ -96,9 +99,37 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
                                                                                     .matches("List|ArrayList|LinkedList")
             && isReplaceableListLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
+            // `new ListLoopFix()` can be just one static instance (it does not use any inner state)
+            // addViolation(data, node, new ListLoopFix()); // TODO: uncomment
         }
 
         return data;
+    }
+
+    private static class ListLoopFix implements RuleViolationAutoFixer {
+        private static String structure(final String varType, final String varName, final String collectionName) {
+            return String.format("for (%s %s : %s) { ; }", varType, varName, collectionName);
+        }
+
+        @Override
+        public void apply(final Node node, final NodeFixer nodeFixer) {
+            final ASTForStatement forStatement = (ASTForStatement) node;
+            forStatement.removeChild(0); // remove ForInit
+            forStatement.removeChild(1); // remove Expression
+            forStatement.removeChild(2); // remove ForUpdate
+            // Leave the Statement as it will be the same for both for
+
+            // Build the new local variable declaration
+            // TODO: have to get the variable type, which is the type of the list
+            // TODO: have to write a variable name if it does not exists; if it exists in the statement,
+            //  we should use that name
+            // TODO: with all these, we should create a LocalVariableDeclaration
+
+            // TODO: then, create an Expression with a PrimaryExpression, inside a PrimaryPrefix, and then a name.
+
+            // TODO: it would be nice to build the string directly and to compile that into what we need, as
+            //  I've proposed before in a Trello card. Let's do that instead, to show that it is much easier in this case.
+        }
     }
 
 
