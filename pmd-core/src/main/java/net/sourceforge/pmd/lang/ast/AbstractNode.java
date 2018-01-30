@@ -79,15 +79,37 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public void jjtAddChild(Node child, int index) {
-        if (children == null) {
+        setChild(child, index);
+    }
+
+    /**
+     * Set the given child at the given index.
+     * - If index < 0, IllegalArgumentException is thrown
+     * - Else, if index >= jjtGetNumChildren, the children array is extended so as to perform the insertion.
+     * - Else, the child at the given index, if any, is detached form this parent and replaced by the given child.
+     * @param child The child to be set.
+     * @param index The position where to set the given child.
+     * @throws IllegalArgumentException If the index is negative.
+     */
+    private void setChild(final Node child, final int index) { // (partial insert) & replace
+        Node oldChild = null;
+        if (index < 0) {
+            throw new IllegalArgumentException("index should be non-negative");
+        } else if (children == null) { // insert, for sure
             children = new Node[index + 1];
-        } else if (index >= children.length) {
+        } else if (index >= children.length) { // insert, for sure
             Node[] newChildren = new Node[index + 1];
             System.arraycopy(children, 0, newChildren, 0, children.length);
             children = newChildren;
+        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
+            oldChild = children[index];
         }
         children[index] = child;
         child.jjtSetChildIndex(index);
+        child.jjtSetParent(this);
+        if (oldChild != null) {
+            oldChild.jjtSetParent(null);
+        }
     }
 
     @Override
@@ -467,6 +489,7 @@ public abstract class AbstractNode implements Node {
         newChild.jjtSetChildIndex(insertionIndex);
         newChild.jjtSetParent(this);
         // Finally, report the insert event
+        // This may be outside this scope, just to avoid calling it when using the jjtAddChild (just call it when rewriting indeed)
         // insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
         return insertionIndex;
     }
