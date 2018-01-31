@@ -14,7 +14,6 @@ import org.jaxen.JaxenException;
 
 import net.sourceforge.pmd.autofix.NodeFixer;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
-import net.sourceforge.pmd.lang.ast.CharStream;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
@@ -29,7 +28,6 @@ import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableInitializer;
 import net.sourceforge.pmd.lang.java.ast.JavaParser;
-import net.sourceforge.pmd.lang.java.ast.JavaParserTokenManager;
 import net.sourceforge.pmd.lang.java.rule.AbstractJavaRule;
 import net.sourceforge.pmd.lang.java.symboltable.VariableNameDeclaration;
 import net.sourceforge.pmd.lang.java.typeresolution.TypeHelper;
@@ -104,7 +102,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             && isReplaceableListLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
             // `new ListLoopFix()` can be just one static instance (it does not use any inner state)
-            // addViolation(data, node, new ListLoopFix()); // TODO: uncomment
+            // addViolation(data, node, new ListLoopFix()); // TODO: This is the way to report the fixer to use for the detected violation
         }
 
         return data;
@@ -119,9 +117,11 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         public void apply(final Node node, final NodeFixer nodeFixer) {
             final ASTForStatement forStatement = (ASTForStatement) node;
 
-            final String varType = ""; // TODO
-            final String varName = ""; // TODO
-            final String collectionName = ""; // TODO
+            // These TODOs are left here as it is not part of the autofix issue:
+            //  one may perfectly traverse the ast form the given node to grab this information
+            final String varType = ""; // TODO: have to get the variable type, which is the type of the list
+            final String varName = ""; // TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
+            final String collectionName = ""; // TODO: have to get the collection (list) name
 
             final String stream = stream(varType, varName, collectionName);
             final CustomJavaParser<ASTForStatement> javaParser = new CustomJavaParser<>(stream);
@@ -129,21 +129,21 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             forStatement.setChild(forEachStatement.jjtGetChild(0), 0); // replace ForInit with LocalVariableDeclaration
             forStatement.setChild(forEachStatement.jjtGetChild(1), 1); // replace Expression with new Expression
             forStatement.removeChild(2); // remove ForUpdate
-            // Leave the Statement as it will be the same for both for
 
-            // Build the new local variable declaration
-            // TODO: have to get the variable type, which is the type of the list
-            // TODO: have to write a variable name if it does not exists; if it exists in the statement,
-            //  we should use that name
-            // TODO: with all these, we should create a LocalVariableDeclaration
-
-            // TODO: then, create an Expression with a PrimaryExpression, inside a PrimaryPrefix, and then a name.
-
-            // TODO: it would be nice to build the string directly and to compile that into what we need, as
-            //  I've proposed before in a Trello card. Let's do that instead, to show that it is much easier in this case.
+            /*
+             * TODO: update the statement so as to replace the get(i) occurrences with the varName name.
+             * If there was an entire line that declared the variable inside the statement, remove that line.
+             */
         }
+
+        /*
+         * Note that first removing the old children of the `ForStatement` (`ForInit` & `Expression`)
+         * and then inserting the new children (`LocalVariableDeclaration` & `Expression`)
+         * works the same because of the merging of the rewrite events
+         */
     }
 
+    // TODO: this class should be available for all rules
     private static class CustomJavaParser<T> extends JavaParser {
 
         CustomJavaParser(final String stream) {
