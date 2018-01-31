@@ -120,7 +120,14 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             // These TODOs are left here as it is not part of the autofix issue:
             //  one may perfectly traverse the ast form the given node to grab this information
             final String varType = ""; // TODO: have to get the variable type, which is the type of the list
-            final String varName = ""; // TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
+            /*
+             * TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
+             * The name to be created can be: aCollectionName[number] where number should start form 1 and be used only
+             * if the aCollectionName var exists, so as to ensure that the variable name is unique.
+             * So, for example, if aCollectionName, aCollectionName1, aCollectionName2 exist, then the variable name
+             * should be aCollectionName3.
+             */
+            final String varName = "";
             final String collectionName = ""; // TODO: have to get the collection (list) name
 
             final String stream = stream(varType, varName, collectionName);
@@ -131,7 +138,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             forStatement.removeChild(2); // remove ForUpdate
 
             /*
-             * TODO: update the statement so as to replace the get(i) occurrences with the varName name.
+             * TODO: update the statement so as to replace ALL the get(i) occurrences with the varName name.
              * If there was an entire line that declared the variable inside the statement, remove that line.
              */
         }
