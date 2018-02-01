@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.lang.model.type.ReferenceType;
 
 import org.jaxen.JaxenException;
 
@@ -24,8 +25,11 @@ import net.sourceforge.pmd.lang.java.ast.ASTForUpdate;
 import net.sourceforge.pmd.lang.java.ast.ASTName;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimaryPrefix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
+import net.sourceforge.pmd.lang.java.ast.ASTPrimitiveType;
+import net.sourceforge.pmd.lang.java.ast.ASTReferenceType;
 import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArgument;
+import net.sourceforge.pmd.lang.java.ast.ASTTypeArguments;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableInitializer;
@@ -155,32 +159,85 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             final ASTClassOrInterfaceType listClassOrInterfaceType =
                 listAstType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
             final String nodeAsString = stringify(listClassOrInterfaceType);
-
-
-
-
-                .getFirstDescendantOfType(ASTTypeArgument.class)
-                .getFirstDescendantOfType(ASTClassOrInterfaceType.class).getImage();
         }
 
-        // xnow primitive version
+        // xnow primitive version: this may be largely improved
+        /*
+         * TODO: we should, for each node, decide if it is new or it has changed
+         */
         private String stringify(final ASTClassOrInterfaceType listClassOrInterfaceType) {
-            return listClassOrInterfaceType.isNew() ? stringifyNew(listClassOrInterfaceType)
-                : stringifyOriginal(listClassOrInterfaceType);
-
-
-            final StringBuilder sb = new StringBuilder(listClassOrInterfaceType.getImage());
-            final String childrenString = stringifyChildren(listClassOrInterfaceType);
-            if (childrenString != null) {
-                sb.append("<");
-                sb.append(childrenString);
-                sb.append(">");
+            final StringBuilder sb  = new StringBuilder();
+            if (listClassOrInterfaceType.isNew()) {
+                stringifyNew(listClassOrInterfaceType, sb);
+            } else {
+                stringifyOriginal(listClassOrInterfaceType, sb);
             }
             return sb.toString();
         }
 
-        private String stringifyChildren(final ASTClassOrInterfaceType listClassOrInterfaceType) {
-            final StringBuilder sb = new StringBuilder();
+        private void stringifyNew(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
+            sb.append(classOrInterfaceType.getImage());
+//            if (classOrInterfaceType.isArray()) {
+//                sb.append("[]");
+//            }
+            stringifyChildren(classOrInterfaceType, sb);
+        }
+
+        private void stringifyChildren(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
+            for (int i = 0; i < classOrInterfaceType.jjtGetNumChildren(); i++) {
+                final Node childNode = classOrInterfaceType.jjtGetChild(i);
+                if (!(childNode instanceof ASTTypeArguments)) { // currently, we are expecting only this kind of child
+                    continue;
+                }
+                stringifyNew((ASTTypeArguments) childNode, sb);
+            }
+        }
+
+        private void stringifyNew(final ASTTypeArguments typeArguments, final StringBuilder sb) {
+            sb.append("<");
+            for (int i = 0; i < typeArguments.jjtGetNumChildren(); i++) {
+                final Node childNode = typeArguments.jjtGetChild(i);
+                if (!(childNode instanceof ASTTypeArgument)) { // currently, we are expecting only this kind of child
+                    continue;
+                }
+                stringifyNew((ASTTypeArgument) childNode, sb);
+                if (i < typeArguments.jjtGetNumChildren() - 1) { // if this is not the last child
+                    sb.append(",");
+                }
+            }
+            sb.append(">");
+        }
+
+        private void stringifyNew(final ASTTypeArgument typeArgument, final StringBuilder sb) {
+            // TODO: we should handle the annotation & wildcardBounds cases here; see Java.jjt file
+            for (int i = 0; i < typeArgument.jjtGetNumChildren(); i++) {
+                final Node childNode = typeArgument.jjtGetChild(i);
+                if (!(childNode instanceof ReferenceType)) {
+                    continue;
+                }
+                stringifyNew((ASTReferenceType) childNode, sb);
+            }
+        }
+
+        private void stringifyNew(final ASTReferenceType referenceType, final StringBuilder sb) {
+            // TODO: we should handle the annotation cases here; see Java.jjt file
+            for (int i = 0; i < referenceType.jjtGetNumChildren(); i++) {
+                final Node childNode = referenceType.jjtGetChild(i);
+                if (childNode instanceof ASTPrimitiveType) {
+                    stringifyNew((ASTPrimitiveType) childNode, sb);
+                } else if (childNode instanceof ASTClassOrInterfaceType) {
+                    stringifyNew((ASTClassOrInterfaceType) childNode, sb);
+                } else {
+                    continue;
+                }
+                for (int j = 0; j < referenceType.getArrayDepth(); j++) {
+                    sb.append("[]");
+                }
+            }
+        }
+
+        private void stringifyNew(final ASTPrimitiveType primitiveType, final StringBuilder sb) {
+            sb.append(primitiveType.getType());
         }
 
         /*
