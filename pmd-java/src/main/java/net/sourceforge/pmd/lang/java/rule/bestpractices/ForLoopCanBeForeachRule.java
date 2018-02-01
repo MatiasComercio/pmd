@@ -16,6 +16,7 @@ import net.sourceforge.pmd.autofix.NodeFixer;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceType;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTForInit;
 import net.sourceforge.pmd.lang.java.ast.ASTForStatement;
@@ -24,6 +25,7 @@ import net.sourceforge.pmd.lang.java.ast.ASTName;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimaryPrefix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
 import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
+import net.sourceforge.pmd.lang.java.ast.ASTTypeArgument;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableInitializer;
@@ -102,13 +104,19 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             && isReplaceableListLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
             // `new ListLoopFix()` can be just one static instance (it does not use any inner state)
-            // addViolation(data, node, new ListLoopFix()); // TODO: This is the way to report the fixer to use for the detected violation
+            // addViolation(data, node, new ListLoopFix(iterableDeclaration)); // TODO: This is the way to report the fixer to use for the detected violation
         }
 
         return data;
     }
 
     private static class ListLoopFix implements RuleViolationAutoFixer {
+        private final VariableNameDeclaration iterableDeclaration;
+
+        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
+            this.iterableDeclaration = pIterableDeclaration;
+        }
+
         private static String stream(final String varType, final String varName, final String collectionName) {
             return String.format("for (%s %s : %s) { ; }", varType, varName, collectionName);
         }
@@ -117,9 +125,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         public void apply(final Node node, final NodeFixer nodeFixer) {
             final ASTForStatement forStatement = (ASTForStatement) node;
 
-            // These TODOs are left here as it is not part of the autofix issue:
-            //  one may perfectly traverse the ast form the given node to grab this information
-            final String varType = ""; // TODO: have to get the variable type, which is the type of the list
+            final String varType = getVarType();
             /*
              * TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
              * The name to be created can be: aCollectionName[number] where number should start form 1 and be used only
@@ -141,6 +147,40 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
              * TODO: update the statement so as to replace ALL the get(i) occurrences with the varName name.
              * If there was an entire line that declared the variable inside the statement, remove that line.
              */
+        }
+
+        private String getVarType() {
+            // iterableDeclaration is sibling of ASTReferenceType, with common parent `ASTType`
+            final Node listAstType = iterableDeclaration.getNode().jjtGetParent();
+            final ASTClassOrInterfaceType listClassOrInterfaceType =
+                listAstType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
+            final String nodeAsString = stringify(listClassOrInterfaceType);
+
+
+
+
+                .getFirstDescendantOfType(ASTTypeArgument.class)
+                .getFirstDescendantOfType(ASTClassOrInterfaceType.class).getImage();
+        }
+
+        // xnow primitive version
+        private String stringify(final ASTClassOrInterfaceType listClassOrInterfaceType) {
+            return listClassOrInterfaceType.isNew() ? stringifyNew(listClassOrInterfaceType)
+                : stringifyOriginal(listClassOrInterfaceType);
+
+
+            final StringBuilder sb = new StringBuilder(listClassOrInterfaceType.getImage());
+            final String childrenString = stringifyChildren(listClassOrInterfaceType);
+            if (childrenString != null) {
+                sb.append("<");
+                sb.append(childrenString);
+                sb.append(">");
+            }
+            return sb.toString();
+        }
+
+        private String stringifyChildren(final ASTClassOrInterfaceType listClassOrInterfaceType) {
+            final StringBuilder sb = new StringBuilder();
         }
 
         /*

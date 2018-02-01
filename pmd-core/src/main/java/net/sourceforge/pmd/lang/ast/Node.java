@@ -318,4 +318,6 @@ public interface Node {
      * @throws NullPointerException if {@code newChild} is null
      */
     void setChild(Node newChild, int index); // TODO: update documentation
+
+    boolean isNew(); // xnow: tmp
 }
