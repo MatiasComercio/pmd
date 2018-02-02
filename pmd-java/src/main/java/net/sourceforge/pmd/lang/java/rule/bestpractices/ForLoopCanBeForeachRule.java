@@ -28,6 +28,7 @@ import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimitiveType;
 import net.sourceforge.pmd.lang.java.ast.ASTReferenceType;
 import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
+import net.sourceforge.pmd.lang.java.ast.ASTType;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArgument;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArguments;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclarator;
@@ -155,31 +156,79 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
         private String getVarType() {
             // iterableDeclaration is sibling of ASTReferenceType, with common parent `ASTType`
-            final Node listAstType = iterableDeclaration.getNode().jjtGetParent();
-            final ASTClassOrInterfaceType listClassOrInterfaceType =
-                listAstType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
-            final String nodeAsString = stringify(listClassOrInterfaceType);
+            final ASTType astType = iterableDeclaration.getNode().getFirstParentOfType(ASTType.class);
+            final Node listClassOrInterfaceType = astType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
+            // As this is a list, it should have 0 or 1 child of type `TypeArguments` & grandchild `TypeArgument`
+            // If 0, list elements are of type `Object`
+            // Else, list elements are of the type determined by `TypeArguments`
+            if (listClassOrInterfaceType.jjtGetNumChildren() == 0) {
+                return "Object";
+            }
+
+            // Get the TypeArguments, and then the TypeArgument
+            return stringify((ASTTypeArgument) listClassOrInterfaceType.jjtGetChild(0).jjtGetChild(0));
         }
 
         // xnow primitive version: this may be largely improved
         /*
          * TODO: we should, for each node, decide if it is new or it has changed
          */
-        private String stringify(final ASTClassOrInterfaceType listClassOrInterfaceType) {
-            final StringBuilder sb  = new StringBuilder();
-            if (listClassOrInterfaceType.isNew()) {
-                stringifyNew(listClassOrInterfaceType, sb);
+        private String stringify(final ASTTypeArgument typeArgument) {
+            final StringBuilder sb = new StringBuilder();
+            if (typeArgument.isNew()) {
+                stringifyNew(typeArgument, sb);
             } else {
-                stringifyOriginal(listClassOrInterfaceType, sb);
+                stringifyOriginal(typeArgument, sb);
             }
             return sb.toString();
         }
 
+        /*
+         * xnow: in the visitor version, if no change is detected in any descendants of the current node, then
+         * the visitor should skip that branch (DO NOT stringify it, its pointless), unless a previous call to
+         * stringifying an updated node has been called.
+         *
+         * For example, we may have one node with two children.
+         * The first one has no descendant modified, but the second one does.
+         * Then, we ask if we should rewrite the current node.
+         * Any of the two child have any direct changes (i.e, in their children), so, we don't rewrite the current node.
+         * Moreover, we skip the visitation of the first child, as we know that that AST branch has not been modified.
+         * We therefore continue navigating the branch of the second child.
+         * When we visit that child, we find that it has two children.
+         * The first one has no descendant modified, but the second one does.
+         * Indeed, the second child has been updated itself, so we start TRACKING/CREATING TEXT OPERATIONS
+         * JUST FOR THE UPDATED CHILDREN OF THE CURRENT NODE.
+         * With this in mind, what we do is to skip the first child (its branch hadn't suffered any modification),
+         * and then generate a text operation to update the second child.
+         *
+         * How is the text operation generated?
+         * THIS IS COMPLETE DIFFERENT STUFF TO THE MENTIONED ABOVE.
+         * Now, we know that at least the current node has changed, and that this change has to be represented as a text
+         * operation.
+         * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node characteristics.
+         * For example, if the current node were a `ClassOrInterfaceDeclaration` (java specialized node), then
+         * this node may have changed its image (i.e., the class name), any of the modifiers
+         * (final, public, abstract, static, etc.), or whatsoever.
+         * 
+         *
+         * Other notes & keys:
+         * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
+         * so as not to make extra operations when not needed, but save the computation result once the ast is traversed
+         * to find the answer to this question.
+         *
+         *
+         */
+        private String stringify(final ASTTypeArgument typeArgument, final String filename) {
+            return typeArgument.hasAnyDescendantBeenModified() ? stringifyModified(typeArgument)
+                : stringifyOriginal(typeArgument, filename);
+        }
+
+        private String stringifyOriginal(final Node node, final String filename) { // This can be applied to ANY node
+
+        }
+
         private void stringifyNew(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
             sb.append(classOrInterfaceType.getImage());
-//            if (classOrInterfaceType.isArray()) {
-//                sb.append("[]");
-//            }
             stringifyChildren(classOrInterfaceType, sb);
         }
 
