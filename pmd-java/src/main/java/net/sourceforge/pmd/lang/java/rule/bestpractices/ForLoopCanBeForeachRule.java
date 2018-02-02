@@ -206,10 +206,44 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * Now, we know that at least the current node has changed, and that this change has to be represented as a text
          * operation.
          * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node characteristics.
-         * For example, if the current node were a `ClassOrInterfaceDeclaration` (java specialized node), then
+         * For example, if the current node were a `ClassOrInterfaceDeclaration` (Java specialized node), then
          * this node may have changed its image (i.e., the class name), any of the modifiers
          * (final, public, abstract, static, etc.), or whatsoever.
-         * 
+         * Depending the type of modification it has been performed, one action may be taken over the other.
+         * Remove modifications are the easiest to deal with, because they can be treated just with the `Node`
+         * interface: get the region represented by that node, and remove it from the original text.
+         * On the other hand, both insert and replace operations are a bit more tricky.
+         * Let's deal with the replace operation, which may be the most difficult one, so as to cover all the cases
+         * at once.
+         * For making a replacement, we should consider all the region of the node that has been replaced,
+         * and transform the new node in its string representation, so as to insert this new text in the region of the
+         * old node.
+         * The tricky part is that, as we should represent the current node as string, this involves stringifying all
+         * the descendant nodes of the current node. But, it may happen that the current (new) node, that is replacing
+         * the original node, has been created with some parts of original nodes (so, its string representation SHOULD
+         * be taken from the original file) and some other parts with new nodes (which don't have a string
+         * representation, and it must therefore be generated).
+         *
+         * // --------------------------------------------------------------------------------------------------------
+         * // Thinking if it should be a good idea to generate all the token string when creating the nodes
+         * // and updating its context (i.e., concatenating the new representation with the original tokens),
+         * // or just rewriting the nodes as string as I was saying...
+         * // I'll go for the second one, because updating tokens context depending on what the user creates
+         * // or does not create may be a little resources-consumer and not as simple to do.
+         * // Eclipse does as I've chosen.
+         * // --------------------------------------------------------------------------------------------------------
+         *
+         * Resuming the idea, we should discriminate original nodes from new nodes when getting its string
+         * representation.
+         * Let's keep using the same example. We are in a `Java` context.
+         * The current node that has replaced the original node is of type `ClassOrInterfaceDeclaration`.
+         * So, we get all the current node characteristics as string, and then go and get its children string
+         * representation (actually, the order in which the strings are grabbed depends on the characteristics
+         * of each type of node for each language).
+         * Let's suppose that the `ClassOrInterfaceDeclaration` node has 2 children (it doesn't matter if this is not
+         * even possible). How do we do to know if a child is original or new?
+         * Well, we should ask each child node hasAnyDescendantBeenModified. // xnow: DESCENDANT INCLUDES SELF? (here should)
+         * If this is false, then all the child node string representation may be taken from the original file. // TODO: doing
          *
          * Other notes & keys:
          * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
