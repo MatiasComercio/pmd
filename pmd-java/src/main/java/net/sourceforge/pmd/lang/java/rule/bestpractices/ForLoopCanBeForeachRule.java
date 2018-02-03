@@ -115,10 +115,12 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         return data;
     }
 
-    private static class ListLoopFix implements RuleViolationAutoFixer {
+    // TODO: this is the way of making the change building a string to grab the needed node structure.
+    //  It may be used in conjunction with the stringify logic to be implemented later.
+    private static class StringListLoopFix implements RuleViolationAutoFixer {
         private final VariableNameDeclaration iterableDeclaration;
 
-        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
+        private StringListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
             this.iterableDeclaration = pIterableDeclaration;
         }
 
@@ -167,20 +169,6 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
             // Get the TypeArguments, and then the TypeArgument
             return stringify((ASTTypeArgument) listClassOrInterfaceType.jjtGetChild(0).jjtGetChild(0));
-        }
-
-        // xnow primitive version: this may be largely improved
-        /*
-         * TODO: we should, for each node, decide if it is new or it has changed
-         */
-        private String stringify(final ASTTypeArgument typeArgument) {
-            final StringBuilder sb = new StringBuilder();
-            if (typeArgument.isNew()) {
-                stringifyNew(typeArgument, sb);
-            } else {
-                stringifyOriginal(typeArgument, sb);
-            }
-            return sb.toString();
         }
 
         /*
@@ -296,13 +284,16 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * for those characteristics identified, in order to just generate text operations for those regions instead
          * that for the entire node region.
          */
-        private String stringify(final ASTTypeArgument typeArgument, final String filename) {
-            return typeArgument.hasAnyDescendantBeenModified() ? stringifyModified(typeArgument)
-                : stringifyOriginal(typeArgument, filename);
-        }
 
-        private String stringifyOriginal(final Node node, final String filename) { // This can be applied to ANY node
-
+        // xnow primitive version: this may be largely improved as explained above
+        private String stringify(final ASTTypeArgument typeArgument) {
+            final StringBuilder sb = new StringBuilder();
+            if (typeArgument.isNew()) {
+                stringifyNew(typeArgument, sb);
+            } else {
+                // stringifyOriginal(typeArgument, sb); // TODO as explained above
+            }
+            return sb.toString();
         }
 
         private void stringifyNew(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
