@@ -243,7 +243,16 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * Let's suppose that the `ClassOrInterfaceDeclaration` node has 2 children (it doesn't matter if this is not
          * even possible). How do we do to know if a child is original or new?
          * Well, we should ask each child node hasAnyDescendantBeenModified. // xnow: DESCENDANT INCLUDES SELF? (here should)
-         * If this is false, then all the child node string representation may be taken from the original file. // TODO: doing
+         * If this is false, then all the child's children nodes string representation may be taken from the
+         * original file. So, we take the region of the current node, grab all the string from the original file
+         * (perhaps, we can enqueue a read operation or sth of that sort so as to read all string sections from
+         * the file at once). TODO: have to think how to solve this issue so as not to downgrade performance that much
+         * If the child node hasAnyDescendantBeenModified call returns true, then we shall repeat the same process that
+         * has occurred for the `ClassOrInterfaceDeclaration` node: build the new string for the new nodes
+         * and grab the original string for the original nodes.
+         *
+         * In this way, we are enforcing to keep the user string representation as much as possible.
+         * With the example below, I'll try to show this behaviour.
          *
          * Other notes & keys:
          * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
