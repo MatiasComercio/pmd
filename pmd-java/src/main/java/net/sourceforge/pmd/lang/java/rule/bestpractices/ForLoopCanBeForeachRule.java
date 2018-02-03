@@ -4,6 +4,15 @@
 
 package net.sourceforge.pmd.lang.java.rule.bestpractices;
 
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTCLASSORINTERFACETYPE;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTLOCALVARIABLEDECLARATION;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTNAME;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTPRIMARYEXPRESSION;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTPRIMARYPREFIX;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTREFERENCETYPE;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTTYPE;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTVARIABLEDECLARATOR;
+
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.List;
@@ -22,7 +31,10 @@ import net.sourceforge.pmd.lang.java.ast.ASTExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTForInit;
 import net.sourceforge.pmd.lang.java.ast.ASTForStatement;
 import net.sourceforge.pmd.lang.java.ast.ASTForUpdate;
+import net.sourceforge.pmd.lang.java.ast.ASTFormalParameter;
+import net.sourceforge.pmd.lang.java.ast.ASTLocalVariableDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTName;
+import net.sourceforge.pmd.lang.java.ast.ASTPrimaryExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimaryPrefix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimitiveType;
@@ -113,6 +125,82 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
 
         return data;
+    }
+
+    private static class ListLoopFix implements RuleViolationAutoFixer {
+        private final VariableNameDeclaration iterableDeclaration;
+
+        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
+            this.iterableDeclaration = pIterableDeclaration;
+        }
+
+
+        @Override
+        public void apply(final Node node, final NodeFixer nodeFixer) {
+            final ASTForStatement forStatement = (ASTForStatement) node;
+
+            // Should be the immediate parent
+            final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
+            forStatement.setChild(localVariableDeclaration, 0);
+            final ASTExpression astExpression = ASTExpression.class.cast(forStatement.jjtGetChild(1));
+            astExpression.setChild(buildPrimaryExpression(iterableDeclaration), 0);
+
+        }
+
+        private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTName iterableName = new ASTName(JJTNAME);
+            iterableName.setNameDeclaration(pIterableDeclaration);
+            // Note that the string representation of this ASTName will be grabbed with:
+            //  iterableName.getNameDeclaration().getName();
+            final ASTPrimaryPrefix primaryPrefix = new ASTPrimaryPrefix(JJTPRIMARYPREFIX);
+            primaryPrefix.setChild(iterableName, 0);
+            final ASTPrimaryExpression primaryExpression = new ASTPrimaryExpression(JJTPRIMARYEXPRESSION);
+            primaryExpression.setChild(primaryPrefix, 0);
+            return primaryExpression;
+        }
+
+        private ASTLocalVariableDeclaration buildLocalVariableDeclaration(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTLocalVariableDeclaration localVariableDeclaration =
+                new ASTLocalVariableDeclaration(JJTLOCALVARIABLEDECLARATION);
+            localVariableDeclaration.setChild(buildType(pIterableDeclaration), 0);
+            localVariableDeclaration.setChild(buildVariableDeclarator(pIterableDeclaration), 1);
+            return localVariableDeclaration;
+        }
+
+        private ASTVariableDeclarator buildVariableDeclarator(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTVariableDeclaratorId variableDeclaratorId = buildVariableDeclaratorId(pIterableDeclaration);
+            final ASTVariableDeclarator variableDeclarator = new ASTVariableDeclarator(JJTVARIABLEDECLARATOR);
+            variableDeclarator.setChild(variableDeclaratorId, 0);
+            return variableDeclarator;
+        }
+
+        /**
+         * If there is a statement in the `for` body like `T elem = list.get(i)`, grab the `elem` name;
+         * if not, create a variable name such as it does not already exist in the scope.
+         */
+        private ASTVariableDeclaratorId buildVariableDeclaratorId(final VariableNameDeclaration pIterableDeclaration) {
+            // TODO: doing
+        }
+
+        private ASTType buildType(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTFormalParameter formalParameter = pIterableDeclaration.getNode().getFirstParentOfType(ASTFormalParameter.class);
+            ASTReferenceType listReferenceType =
+                formalParameter.getFirstDescendantOfType(ASTReferenceType.class).getFirstChildOfType(ASTReferenceType.class);
+            if (listReferenceType == null) { // no generic type for list
+                listReferenceType = new ASTReferenceType(JJTREFERENCETYPE);
+                final ASTClassOrInterfaceType objectClassOrInterfaceType = new ASTClassOrInterfaceType(JJTCLASSORINTERFACETYPE);
+                objectClassOrInterfaceType.setType(Object.class);
+                listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
+            } else {
+                listReferenceType = listReferenceType.clone(); // So as not to detach the old node from the original parent
+                // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
+                //  but to not remove that string region if this cloned node is removed
+                //  TODO: i.e., this will be like a `new` node but with an `original` string reference
+            }
+            final ASTType listType = new ASTType(JJTTYPE);
+            listType.setChild(listReferenceType, 0);
+            return listType;
+        }
     }
 
     // TODO: this is the way of making the change building a string to grab the needed node structure.
