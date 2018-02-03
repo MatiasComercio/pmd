@@ -276,13 +276,15 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * from the original file (perhaps, we can enqueue a read operation or sth of that sort so as to read all
          * string sections from the file at once).
          * // TODO: have to think how to solve this issue so as not to downgrade performance that much
-         * - If this is true, then we shall visit the // xnow doing
+         * - If this is true, then we shall grab each exclusive parent region so as to get the
+         * current node string section from the original file, and then concatenate the string
+         * for each of its children. The exclusive parent region may be obtained by making a xor between the parent
+         * region and each of the children regions. Given this, the exclusive parent region is indeed an array of
+         * regions.
+         *   The string for each child may be obtained using the same logic as stated above (i.e., build the
+         *   new string for the new nodes and grab the original string for the original nodes).
          *
-         *
-         * If the child node hasAnyDescendantBeenModified call returns true, then we shall repeat the same process that
-         * has occurred for the `ClassOrInterfaceDeclaration` node: build the new string for the new nodes
-         * and grab the original string for the original nodes.
-         *
+         * ===================================================
          * In this way, we are enforcing to keep the user string representation as much as possible.
          * With the example below, I'll try to show this behaviour.
          *
@@ -290,8 +292,9 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
          * so as not to make extra operations when not needed, but save the computation result once the ast is traversed
          * to find the answer to this question.
-         *
-         *
+         * - It would be nice if nodes with custom characteristics (like access nodes in java) can have regions
+         * for those characteristics identified, in order to just generate text operations for those regions instead
+         * that for the entire node region.
          */
         private String stringify(final ASTTypeArgument typeArgument, final String filename) {
             return typeArgument.hasAnyDescendantBeenModified() ? stringifyModified(typeArgument)
