@@ -184,45 +184,71 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
 
         /*
-         * xnow: in the visitor version, if no change is detected in any descendants of the current node, then
+         * ===================================================
+         * -- Idea --
+         * In the visitor version, if no change is detected in any descendants of the current node, then
          * the visitor should skip that branch (DO NOT stringify it, its pointless), unless a previous call to
          * stringifying an updated node has been called.
          *
-         * For example, we may have one node with two children.
-         * The first one has no descendant modified, but the second one does.
-         * Then, we ask if we should rewrite the current node.
-         * Any of the two child have any direct changes (i.e, in their children), so, we don't rewrite the current node.
-         * Moreover, we skip the visitation of the first child, as we know that that AST branch has not been modified.
-         * We therefore continue navigating the branch of the second child.
-         * When we visit that child, we find that it has two children.
-         * The first one has no descendant modified, but the second one does.
-         * Indeed, the second child has been updated itself, so we start TRACKING/CREATING TEXT OPERATIONS
-         * JUST FOR THE UPDATED CHILDREN OF THE CURRENT NODE.
-         * With this in mind, what we do is to skip the first child (its branch hadn't suffered any modification),
-         * and then generate a text operation to update the second child.
+         * ===================================================
+         * -- Step 1: Finding Rewrite Events --
          *
-         * How is the text operation generated?
-         * THIS IS COMPLETE DIFFERENT STUFF TO THE MENTIONED ABOVE.
-         * Now, we know that at least the current node has changed, and that this change has to be represented as a text
-         * operation.
-         * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node characteristics.
-         * For example, if the current node were a `ClassOrInterfaceDeclaration` (Java specialized node), then
-         * this node may have changed its image (i.e., the class name), any of the modifiers
-         * (final, public, abstract, static, etc.), or whatsoever.
-         * Depending the type of modification it has been performed, one action may be taken over the other.
-         * Remove modifications are the easiest to deal with, because they can be treated just with the `Node`
-         * interface: get the region represented by that node, and remove it from the original text.
-         * On the other hand, both insert and replace operations are a bit more tricky.
+         * Let's start with an example case, where we have one node with two children, and we are standing
+         * on that node, so we know that it hasn't suffered any changes.
+         * We may find if our own children have been modified first, in order to check if we should generate
+         * a text operation for them.
+         * We find that none of them have been modified, so we don't have to rewrite them.
+         * Given this, we can check for advance if we have to continue visiting any of these children.
+         * If one node descendants haven't suffered any modifications, then its pointless to visit that branch
+         * of the ast.
+         * We therefore ask, for each child node, if childNode.hasAnyDescendantsBeenModified.
+         * We find that the first one has no descendant modified, but the second one does.
+         *
+         * Given this, we skip the visitation of the first child, as we know that that AST branch has not been modified.
+         * Hence, we continue navigating the branch of the second child.
+         * When we visit that child, we find that it has two children.
+         * The first one hasn't been modified and doesn't have any descendant modified.
+         * The second child has been updated itself, so we start CREATING TEXT OPERATIONS
+         * JUST FOR THE UPDATED CHILD OF THE CURRENT NODE (i.e., for this second child only).
+         * With this in mind, what we do is to skip the first child (it hasn't been modified & its branch hadn't
+         * suffered any modification), and generate a text operation to update the string representation of the
+         * second child.
+         *
+         * Note that all this stuff can be performed in a language-independent way,
+         * as we are only finding rewrite events, which should be generated for nodes of all PMD supported languages.
+         *
+         * ===================================================
+         * -- Step 2: Translating Rewrite Events to Text Operations --
+         * We shall answer the question `How are text operations generated?`
+         * Before starting, bare in mind that THIS IS COMPLETE DIFFERENT STUFF/FLOW TO THE MENTIONED ABOVE.
+         *
+         * Now, we are in a context where we know that the current node has been modified, and that this change
+         * has to be represented as a text operation.
+         * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node
+         * and its characteristics.
+         *
+         * Note that as nodes of each PMD supported language have their own characteristics,
+         * this flow is language-dependent (just in the case of replace/insert events, as we explain below).
+         *
+         * Let's suppose that we are dealing with Java nodes, and that the current node is a
+         * `ClassOrInterfaceDeclaration`. Then this node may have changed its image (i.e., the class name),
+         * any of the modifiers (final, public, abstract, static, etc.), or whatsoever.
+         * Depending on the type of modification it has been performed, one action may be taken over the other.
+         * - Remove modifications are the easiest to deal with, because they can be treated just with the `Node`
+         * interface: get the region represented by that node, and remove it from the original source.
+         * In this case only, translation of rewrite events into text operations is language-independent.
+         * - On the other hand, both insert and replace operations are a bit more tricky.
+         *
          * Let's deal with the replace operation, which may be the most difficult one, so as to cover all the cases
          * at once.
          * For making a replacement, we should consider all the region of the node that has been replaced,
          * and transform the new node in its string representation, so as to insert this new text in the region of the
-         * old node.
+         * old node's matching text.
          * The tricky part is that, as we should represent the current node as string, this involves stringifying all
          * the descendant nodes of the current node. But, it may happen that the current (new) node, that is replacing
          * the original node, has been created with some parts of original nodes (so, its string representation SHOULD
          * be taken from the original file) and some other parts with new nodes (which don't have a string
-         * representation, and it must therefore be generated).
+         * representation, and must therefore be generated).
          *
          * // --------------------------------------------------------------------------------------------------------
          * // Thinking if it should be a good idea to generate all the token string when creating the nodes
@@ -235,18 +261,24 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          *
          * Resuming the idea, we should discriminate original nodes from new nodes when getting its string
          * representation.
-         * Let's keep using the same example. We are in a `Java` context.
-         * The current node that has replaced the original node is of type `ClassOrInterfaceDeclaration`.
+         * Let's keep using the same example. Recall that we are in a `Java` context and that
+         * the current node that has replaced the original node is of type `ClassOrInterfaceDeclaration`.
          * So, we get all the current node characteristics as string, and then go and get its children string
-         * representation (actually, the order in which the strings are grabbed depends on the characteristics
+         * representation (actually, the order in which the children strings are grabbed depends on the characteristics
          * of each type of node for each language).
          * Let's suppose that the `ClassOrInterfaceDeclaration` node has 2 children (it doesn't matter if this is not
-         * even possible). How do we do to know if a child is original or new?
-         * Well, we should ask each child node hasAnyDescendantBeenModified. // xnow: DESCENDANT INCLUDES SELF? (here should)
-         * If this is false, then all the child's children nodes string representation may be taken from the
-         * original file. So, we take the region of the current node, grab all the string from the original file
-         * (perhaps, we can enqueue a read operation or sth of that sort so as to read all string sections from
-         * the file at once). TODO: have to think how to solve this issue so as not to downgrade performance that much
+         * even possible; it's just for an illustrative purpose). How do we do to know if a child is original or new?
+         * Well, we should first ask if the children have changed themselves.
+         * Let's suppose that the first child hasn't changed.
+         * So, we ask it firstChildNode.hasAnyDescendantBeenModified.
+         * - If this is false, then all the child's children nodes string representation may be taken from the
+         * original file. For this, we take the region of the first child node and grab all the string of that region
+         * from the original file (perhaps, we can enqueue a read operation or sth of that sort so as to read all
+         * string sections from the file at once).
+         * // TODO: have to think how to solve this issue so as not to downgrade performance that much
+         * - If this is true, then we shall visit the // xnow doing
+         *
+         *
          * If the child node hasAnyDescendantBeenModified call returns true, then we shall repeat the same process that
          * has occurred for the `ClassOrInterfaceDeclaration` node: build the new string for the new nodes
          * and grab the original string for the original nodes.
