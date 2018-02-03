@@ -12,6 +12,7 @@ import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTPRIMA
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTREFERENCETYPE;
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTTYPE;
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTVARIABLEDECLARATOR;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTVARIABLEDECLARATORID;
 
 import java.io.StringReader;
 import java.util.Iterator;
@@ -62,7 +63,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
     public ForLoopCanBeForeachRule() {
         addRuleChainVisit(ASTForStatement.class);
     }
-    
+
     @Override
     public Object visit(ASTForStatement node, Object data) {
 
@@ -117,7 +118,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         if (iterableDeclaration.isArray() && isReplaceableArrayLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
         } else if (iterableDeclaration.getTypeImage() != null && iterableDeclaration.getTypeImage()
-                                                                                    .matches("List|ArrayList|LinkedList")
+            .matches("List|ArrayList|LinkedList")
             && isReplaceableListLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
             // `new ListLoopFix()` can be just one static instance (it does not use any inner state)
@@ -129,9 +130,15 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
     private static class ListLoopFix implements RuleViolationAutoFixer {
         private final VariableNameDeclaration iterableDeclaration;
+        private final ASTLocalVariableDeclaration statementDeclaration;
 
         private ListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
             this.iterableDeclaration = pIterableDeclaration;
+            statementDeclaration = getStatementDeclaration(iterableDeclaration);
+        }
+
+        private ASTLocalVariableDeclaration getStatementDeclaration(final VariableNameDeclaration iterableDeclaration) {
+            // TODO:
         }
 
 
@@ -174,12 +181,40 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             return variableDeclarator;
         }
 
+
+        private static final String ORIGINAL_IMAGE = "aListElem";
         /**
          * If there is a statement in the `for` body like `T elem = list.get(i)`, grab the `elem` name;
          * if not, create a variable name such as it does not already exist in the scope.
          */
         private ASTVariableDeclaratorId buildVariableDeclaratorId(final VariableNameDeclaration pIterableDeclaration) {
-            // TODO: doing
+            if (statementDeclaration != null) { // Clone the already existing variable declarator id
+                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0)).clone();
+            }
+
+            // Create a variable name that does not exist in the scope
+            final Scope scope = pIterableDeclaration.getScope();
+
+            int i = 1;
+            String newImage = ORIGINAL_IMAGE;
+            // TODO: find if there is any NameDeclaration of the given class already declared with the given image
+            // TODO: idea of implementation: getDeclarations of the given class and iterate all over those declarations
+            //  comparing the given image with the image of each iteration.
+            //  This should be done not only for current scope but up to the root scope,
+            //      so as to ensure we are not screwing it up overriding an already declared variable
+            //      and changing its value in the current scope
+            //  Note that the `equals` of VariableNameDeclaration is done through the image field
+            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
+                newImage = ORIGINAL_IMAGE + i++;
+            }
+
+            // Create the node and the variable declaration with the chosen image
+            final ASTVariableDeclaratorId variableDeclaratorId = new ASTVariableDeclaratorId(JJTVARIABLEDECLARATORID);
+            variableDeclaratorId.setImage(newImage);
+            final VariableNameDeclaration nameDeclaration = new VariableNameDeclaration(variableDeclaratorId);
+            variableDeclaratorId.getScope().addDeclaration(nameDeclaration);
+            variableDeclaratorId.setNameDeclaration(nameDeclaration);
+            return variableDeclaratorId;
         }
 
         private ASTType buildType(final VariableNameDeclaration pIterableDeclaration) {
@@ -601,7 +636,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
     private Entry<VariableNameDeclaration, List<NameOccurrence>> getIterableDeclOfIteratorLoop(VariableNameDeclaration indexDecl, Scope scope) {
         Node initializer = indexDecl.getNode().getFirstParentOfType(ASTVariableDeclarator.class)
-                                    .getFirstChildOfType(ASTVariableInitializer.class);
+            .getFirstChildOfType(ASTVariableInitializer.class);
 
         if (initializer == null) {
             return null;
@@ -612,7 +647,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             // TODO : This can happen if we are calling a local / statically imported method that returns the iterable - currently unhandled
             return null;
         }
-        
+
         String name = nameNode.getImage();
         int dotIndex = name.indexOf('.');
 
@@ -651,7 +686,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             }
 
             return suffix.hasDescendantMatchingXPath("./Expression/PrimaryExpression[count(*)"
-                                                         + "=1]/PrimaryPrefix/Name[@Image='" + occ.getImage() + "']")
+                + "=1]/PrimaryPrefix/Name[@Image='" + occ.getImage() + "']")
                 && suffix.hasDescendantMatchingXPath("../PrimaryPrefix/Name[@Image='" + arrayName + "']")
                 && !suffix.hasDescendantMatchingXPath("../../AssignmentOperator");
         }
@@ -680,7 +715,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
 
     /** @return true if this occurence is as an argument to List.get on the correct list */
-    private boolean occurenceIsListGet(NameOccurrence occ, String listName) {
+    private static boolean occurenceIsListGet(NameOccurrence occ, String listName) {
         if (occ.getLocation() instanceof ASTName) {
             ASTPrimarySuffix suffix = occ.getLocation().getFirstParentOfType(ASTPrimarySuffix.class);
 
