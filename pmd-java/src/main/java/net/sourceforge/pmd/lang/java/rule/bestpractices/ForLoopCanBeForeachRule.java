@@ -27,6 +27,8 @@ import net.sourceforge.pmd.autofix.NodeFixer;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.ast.ASTBlock;
+import net.sourceforge.pmd.lang.java.ast.ASTBlockStatement;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceType;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTForInit;
@@ -41,6 +43,7 @@ import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimitiveType;
 import net.sourceforge.pmd.lang.java.ast.ASTReferenceType;
 import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
+import net.sourceforge.pmd.lang.java.ast.ASTStatement;
 import net.sourceforge.pmd.lang.java.ast.ASTType;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArgument;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArguments;
@@ -137,21 +140,50 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             statementDeclaration = getStatementDeclaration(iterableDeclaration);
         }
 
-        private ASTLocalVariableDeclaration getStatementDeclaration(final VariableNameDeclaration iterableDeclaration) {
-            // TODO:
+        private ASTLocalVariableDeclaration getStatementDeclaration(final VariableNameDeclaration pIterableDeclaration) {
+            return null; // TODO: doing
         }
 
-
         @Override
-        public void apply(final Node node, final NodeFixer nodeFixer) {
-            final ASTForStatement forStatement = (ASTForStatement) node;
-
-            // Should be the immediate parent
+        public void apply(final Node forStatement, final NodeFixer nodeFixer) {
+            // Update the first for child
             final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
             forStatement.setChild(localVariableDeclaration, 0);
+            // TODO: think: Perhaps, other way to do it can be:
+            //  forStatement.getFirstChildOfType(ASTForInit.class).replaceWith(localVariableDeclaration);
+            // This will replace the self node with the given node at the self node index in the parent
+
+            // Update the expression child of the for loop to match the for each expression
             final ASTExpression astExpression = ASTExpression.class.cast(forStatement.jjtGetChild(1));
             astExpression.setChild(buildPrimaryExpression(iterableDeclaration), 0);
+            // Remove the third child of the `for` node (i.e., the ForUpdate node)
+            forStatement.removeChild(2);
+            // TODO: IMPORTANT: This can also be performed in the following way:
+            //  forStatement.getFirstChildOfType(ASTForUpdate.class).remove();
 
+            final List<NameOccurrence> indexOccurrences = getIndexOccurrences(ASTForStatement.class.cast(forStatement)); // TODO
+            final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration); // TODO
+            replaceListAccessWithForEachVariable(iterableDeclaration, indexOccurrences, );
+        }
+
+        private void replaceListAccessWithForEachVariable(final VariableNameDeclaration listDeclaration,
+                                                          final List<NameOccurrence> indexOccurrences,
+                                                          final ASTExpression newForeachVariableExpression) {
+            final String listName = listDeclaration.getName();
+
+            for (NameOccurrence indexOccurrence : indexOccurrences) {
+                if (!occurenceIsListGet(indexOccurrence, listName)) {
+                    continue;
+                }
+                final ASTExpression expression = indexOccurrence.getLocation().getFirstParentOfType(ASTExpression.class);
+                if (expression.jjtGetParent() instanceof ASTVariableInitializer) {
+                    // This occurrence is an assignment => it has to be removed in favor of the foreach variable
+                    expression.getFirstParentOfType(ASTBlockStatement.class).remove();
+                } else { // This occurrence is a usage only => it has to be replaced with the foreach variable
+                    expression.jjtGetParent().setChild(newForeachVariableExpression, expression.jjtGetChildIndex());
+                    // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
+                }
+            }
         }
 
         private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
@@ -189,7 +221,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          */
         private ASTVariableDeclaratorId buildVariableDeclaratorId(final VariableNameDeclaration pIterableDeclaration) {
             if (statementDeclaration != null) { // Clone the already existing variable declarator id
-                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0)).clone();
+                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0))/*.clone()*/;
             }
 
             // Create a variable name that does not exist in the scope
@@ -204,9 +236,9 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             //      so as to ensure we are not screwing it up overriding an already declared variable
             //      and changing its value in the current scope
             //  Note that the `equals` of VariableNameDeclaration is done through the image field
-            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
-                newImage = ORIGINAL_IMAGE + i++;
-            }
+//            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
+//                newImage = ORIGINAL_IMAGE + i++;
+//            }
 
             // Create the node and the variable declaration with the chosen image
             final ASTVariableDeclaratorId variableDeclaratorId = new ASTVariableDeclaratorId(JJTVARIABLEDECLARATORID);
@@ -227,7 +259,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
                 objectClassOrInterfaceType.setType(Object.class);
                 listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
             } else {
-                listReferenceType = listReferenceType.clone(); // So as not to detach the old node from the original parent
+                listReferenceType = listReferenceType/*.clone()*/; // So as not to detach the old node from the original parent
                 // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
                 //  but to not remove that string region if this cloned node is removed
                 //  TODO: i.e., this will be like a `new` node but with an `original` string reference

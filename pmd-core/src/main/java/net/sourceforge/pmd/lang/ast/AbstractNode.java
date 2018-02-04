@@ -520,4 +520,9 @@ public abstract class AbstractNode implements Node {
             jjtGetChild(i).jjtSetChildIndex(i);
         }
     }
+
+    @Override
+    public boolean isNew() {
+        return false; // TODO: just for compiling impl
+    }
 }
