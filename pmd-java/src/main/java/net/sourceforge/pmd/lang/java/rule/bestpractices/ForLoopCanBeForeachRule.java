@@ -27,7 +27,6 @@ import net.sourceforge.pmd.autofix.NodeFixer;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.java.ast.ASTBlock;
 import net.sourceforge.pmd.lang.java.ast.ASTBlockStatement;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceType;
 import net.sourceforge.pmd.lang.java.ast.ASTExpression;
@@ -43,7 +42,6 @@ import net.sourceforge.pmd.lang.java.ast.ASTPrimarySuffix;
 import net.sourceforge.pmd.lang.java.ast.ASTPrimitiveType;
 import net.sourceforge.pmd.lang.java.ast.ASTReferenceType;
 import net.sourceforge.pmd.lang.java.ast.ASTRelationalExpression;
-import net.sourceforge.pmd.lang.java.ast.ASTStatement;
 import net.sourceforge.pmd.lang.java.ast.ASTType;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArgument;
 import net.sourceforge.pmd.lang.java.ast.ASTTypeArguments;
@@ -125,7 +123,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             && isReplaceableListLoop(node, occurrences, iterableDeclaration)) {
             addViolation(data, node);
             // `new ListLoopFix()` can be just one static instance (it does not use any inner state)
-            // addViolation(data, node, new ListLoopFix(iterableDeclaration)); // TODO: This is the way to report the fixer to use for the detected violation
+            // addViolation(data, node, new ListLoopFix(iterableDeclaration, occurrences)); // TODO: This is the way to report the fixer to use for the detected violation
         }
 
         return data;
@@ -133,20 +131,19 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
     private static class ListLoopFix implements RuleViolationAutoFixer {
         private final VariableNameDeclaration iterableDeclaration;
-        private final ASTLocalVariableDeclaration statementDeclaration;
+        private final List<NameOccurrence> indexOccurrences;
+        private final ASTLocalVariableDeclaration statementDeclaration; // TODO: doing
 
-        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
+        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration,
+                            final List<NameOccurrence> pIndexOccurrences) {
             this.iterableDeclaration = pIterableDeclaration;
-            statementDeclaration = getStatementDeclaration(iterableDeclaration);
-        }
-
-        private ASTLocalVariableDeclaration getStatementDeclaration(final VariableNameDeclaration pIterableDeclaration) {
-            return null; // TODO: doing
+            this.indexOccurrences = pIndexOccurrences;
         }
 
         @Override
+        // TODO: update SCOPE correctly; not doing it here because it should be done `transparently` for the user
         public void apply(final Node forStatement, final NodeFixer nodeFixer) {
-            // Update the first for child
+            // Update the first `for` child node (i.e., the ForInit node)
             final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
             forStatement.setChild(localVariableDeclaration, 0);
             // TODO: think: Perhaps, other way to do it can be:
@@ -161,9 +158,13 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             // TODO: IMPORTANT: This can also be performed in the following way:
             //  forStatement.getFirstChildOfType(ASTForUpdate.class).remove();
 
-            final List<NameOccurrence> indexOccurrences = getIndexOccurrences(ASTForStatement.class.cast(forStatement)); // TODO
-            final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration); // TODO
-            replaceListAccessWithForEachVariable(iterableDeclaration, indexOccurrences, );
+            final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration);
+            replaceListAccessWithForEachVariable(iterableDeclaration, indexOccurrences, newForeachVariableExpression);
+        }
+
+        private ASTExpression buildNewForEachVariableExpression(final ASTLocalVariableDeclaration localVariableDeclaration) {
+            // TODO: doing
+
         }
 
         private void replaceListAccessWithForEachVariable(final VariableNameDeclaration listDeclaration,
