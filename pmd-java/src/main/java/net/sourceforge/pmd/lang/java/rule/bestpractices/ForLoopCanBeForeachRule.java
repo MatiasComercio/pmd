@@ -5,6 +5,7 @@
 package net.sourceforge.pmd.lang.java.rule.bestpractices;
 
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTCLASSORINTERFACETYPE;
+import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTEXPRESSION;
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTLOCALVARIABLEDECLARATION;
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTNAME;
 import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTPRIMARYEXPRESSION;
@@ -163,8 +164,11 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
 
         private ASTExpression buildNewForEachVariableExpression(final ASTLocalVariableDeclaration localVariableDeclaration) {
-            // TODO: doing
-
+            final VariableNameDeclaration variableNameDeclaration =
+                localVariableDeclaration.getFirstDescendantOfType(ASTVariableDeclaratorId.class).getNameDeclaration();
+            final ASTExpression expression = new ASTExpression(JJTEXPRESSION);
+            expression.setChild(buildPrimaryExpression(variableNameDeclaration), 0);
+            return expression;
         }
 
         private void replaceListAccessWithForEachVariable(final VariableNameDeclaration listDeclaration,
@@ -181,7 +185,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
                     // This occurrence is an assignment => it has to be removed in favor of the foreach variable
                     expression.getFirstParentOfType(ASTBlockStatement.class).remove();
                 } else { // This occurrence is a usage only => it has to be replaced with the foreach variable
-                    expression.jjtGetParent().setChild(newForeachVariableExpression, expression.jjtGetChildIndex());
+                    expression.jjtGetParent().setChild(newForeachVariableExpression.clone(), expression.jjtGetChildIndex());
                     // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
                 }
             }
@@ -189,9 +193,9 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
         private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
             final ASTName iterableName = new ASTName(JJTNAME);
+            iterableName.setImage(pIterableDeclaration.getImage());
+            iterableName.setType(pIterableDeclaration.getType());
             iterableName.setNameDeclaration(pIterableDeclaration);
-            // Note that the string representation of this ASTName will be grabbed with:
-            //  iterableName.getNameDeclaration().getName();
             final ASTPrimaryPrefix primaryPrefix = new ASTPrimaryPrefix(JJTPRIMARYPREFIX);
             primaryPrefix.setChild(iterableName, 0);
             final ASTPrimaryExpression primaryExpression = new ASTPrimaryExpression(JJTPRIMARYEXPRESSION);
@@ -222,7 +226,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          */
         private ASTVariableDeclaratorId buildVariableDeclaratorId(final VariableNameDeclaration pIterableDeclaration) {
             if (statementDeclaration != null) { // Clone the already existing variable declarator id
-                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0))/*.clone()*/;
+                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0)).clone();
             }
 
             // Create a variable name that does not exist in the scope
@@ -237,9 +241,9 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             //      so as to ensure we are not screwing it up overriding an already declared variable
             //      and changing its value in the current scope
             //  Note that the `equals` of VariableNameDeclaration is done through the image field
-//            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
-//                newImage = ORIGINAL_IMAGE + i++;
-//            }
+            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
+                newImage = ORIGINAL_IMAGE + i++;
+            }
 
             // Create the node and the variable declaration with the chosen image
             final ASTVariableDeclaratorId variableDeclaratorId = new ASTVariableDeclaratorId(JJTVARIABLEDECLARATORID);
@@ -260,7 +264,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
                 objectClassOrInterfaceType.setType(Object.class);
                 listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
             } else {
-                listReferenceType = listReferenceType/*.clone()*/; // So as not to detach the old node from the original parent
+                listReferenceType = listReferenceType.clone(); // So as not to detach the old node from the original parent
                 // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
                 //  but to not remove that string region if this cloned node is removed
                 //  TODO: i.e., this will be like a `new` node but with an `original` string reference
