@@ -131,447 +131,6 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         return data;
     }
 
-    private static class ListLoopFix implements RuleViolationAutoFixer {
-        private final VariableNameDeclaration iterableDeclaration;
-        private final List<NameOccurrence> indexOccurrences;
-        private final ListGetOccurrences listGetOccurrences;
-
-        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration,
-                            final List<NameOccurrence> pIndexOccurrences) {
-            this.iterableDeclaration = pIterableDeclaration;
-            this.indexOccurrences = pIndexOccurrences;
-            this.listGetOccurrences = getListGetIndexOccurrences(iterableDeclaration, indexOccurrences);
-        }
-
-        @Override
-        // TODO: update SCOPE correctly; not doing it here because it should be done `transparently` for the user
-        public void apply(final Node forStatement, final NodeFixer nodeFixer) {
-            // Update the first `for` child node (i.e., the ForInit node)
-            final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
-            forStatement.setChild(localVariableDeclaration, 0);
-            // TODO: think: Perhaps, other way to do it can be:
-            //  forStatement.getFirstChildOfType(ASTForInit.class).replaceWith(localVariableDeclaration);
-            // This will replace the self node with the given node at the self node index in the parent
-
-            // Update the expression child of the for loop to match the for each expression
-            final ASTExpression astExpression = ASTExpression.class.cast(forStatement.jjtGetChild(1));
-            astExpression.setChild(buildPrimaryExpression(iterableDeclaration), 0);
-            // Remove the third child of the `for` node (i.e., the ForUpdate node)
-            forStatement.removeChild(2);
-            // TODO: IMPORTANT: This can also be performed in the following way:
-            //  forStatement.getFirstChildOfType(ASTForUpdate.class).remove();
-
-            final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration);
-            replaceListAccessWithForEachVariable(listGetOccurrences, newForeachVariableExpression);
-        }
-
-        private ASTExpression buildNewForEachVariableExpression(final ASTLocalVariableDeclaration localVariableDeclaration) {
-            final VariableNameDeclaration variableNameDeclaration =
-                localVariableDeclaration.getFirstDescendantOfType(ASTVariableDeclaratorId.class).getNameDeclaration();
-            final ASTExpression expression = new ASTExpression(JJTEXPRESSION);
-            expression.setChild(buildPrimaryExpression(variableNameDeclaration), 0);
-            return expression;
-        }
-
-        private void replaceListAccessWithForEachVariable(final ListGetOccurrences pListGetOccurrences,
-                                                          final ASTExpression newForeachVariableExpression) {
-            for (final ASTExpression expression : pListGetOccurrences.assignmentExpressions) {
-                // It has to be removed in favor of the foreach variable
-                // Note that if this is an assignment, then the `for` statement is enforced to have a block to compile
-                expression.getFirstParentOfType(ASTBlockStatement.class).remove();
-            }
-
-            for (final ASTExpression expression : pListGetOccurrences.usageExpressions) {
-                // It has to be replaced with the foreach variable
-                expression.jjtGetParent().setChild(newForeachVariableExpression/*.clone() TODO */, expression.jjtGetChildIndex());
-                // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
-            }
-        }
-
-        private static class ListGetOccurrences {
-            private final List<ASTExpression> assignmentExpressions;
-            private final List<ASTExpression> usageExpressions;
-
-            private ListGetOccurrences(final List<ASTExpression> pAssignmentExpressions,
-                                       final List<ASTExpression> pUsageExpressions) {
-                this.assignmentExpressions = pAssignmentExpressions;
-                this.usageExpressions = pUsageExpressions;
-            }
-        }
-
-        private ListGetOccurrences getListGetIndexOccurrences(final VariableNameDeclaration listDeclaration,
-                                                              final List<NameOccurrence> pIndexOccurrences) {
-            final String listName = listDeclaration.getName();
-
-            final List<ASTExpression> assignmentExpressions = new LinkedList<>();
-            final List<ASTExpression> usageExpressions = new LinkedList<>();
-
-            for (NameOccurrence indexOccurrence : pIndexOccurrences) {
-                if (!occurenceIsListGet(indexOccurrence, listName)) {
-                    continue;
-                }
-                final ASTExpression expression = indexOccurrence.getLocation().getFirstParentOfType(ASTExpression.class);
-                if (expression.jjtGetParent() instanceof ASTVariableInitializer) {
-                    assignmentExpressions.add(expression);
-                } else {
-                    usageExpressions.add(expression);
-                }
-            }
-
-            return new ListGetOccurrences(assignmentExpressions, usageExpressions);
-        }
-
-        private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
-            final ASTName iterableName = new ASTName(JJTNAME);
-            iterableName.setImage(pIterableDeclaration.getImage());
-            iterableName.setType(pIterableDeclaration.getType());
-            iterableName.setNameDeclaration(pIterableDeclaration);
-            final ASTPrimaryPrefix primaryPrefix = new ASTPrimaryPrefix(JJTPRIMARYPREFIX);
-            primaryPrefix.setChild(iterableName, 0);
-            final ASTPrimaryExpression primaryExpression = new ASTPrimaryExpression(JJTPRIMARYEXPRESSION);
-            primaryExpression.setChild(primaryPrefix, 0);
-            return primaryExpression;
-        }
-
-        private ASTLocalVariableDeclaration buildLocalVariableDeclaration(final VariableNameDeclaration pIterableDeclaration) {
-            final ASTLocalVariableDeclaration localVariableDeclaration =
-                new ASTLocalVariableDeclaration(JJTLOCALVARIABLEDECLARATION);
-            localVariableDeclaration.setChild(buildType(pIterableDeclaration), 0);
-            localVariableDeclaration.setChild(buildVariableDeclarator(pIterableDeclaration), 1);
-            return localVariableDeclaration;
-        }
-
-        private ASTVariableDeclarator buildVariableDeclarator(final VariableNameDeclaration pIterableDeclaration) {
-            final ASTVariableDeclaratorId variableDeclaratorId = buildVariableDeclaratorId(listGetOccurrences, pIterableDeclaration);
-            final ASTVariableDeclarator variableDeclarator = new ASTVariableDeclarator(JJTVARIABLEDECLARATOR);
-            variableDeclarator.setChild(variableDeclaratorId, 0);
-            return variableDeclarator;
-        }
-
-
-        private static final String ORIGINAL_IMAGE = "aListElem";
-        /**
-         * If there is a statement in the `for` body like `T elem = list.get(i)`, grab the `elem` name;
-         * if not, create a variable name such as it does not already exist in the scope.
-         */
-        private ASTVariableDeclaratorId buildVariableDeclaratorId(final ListGetOccurrences pListGetOccurrences,
-                                                                  final VariableNameDeclaration pIterableDeclaration) {
-            if (!pListGetOccurrences.assignmentExpressions.isEmpty()) {
-                // Just getting the first one that will be the only one assigned; other assignments should be removed,
-                // and those variables usages replaced with the new one // TODO
-                return pListGetOccurrences.assignmentExpressions.get(0)
-                    .getFirstParentOfType(ASTLocalVariableDeclaration.class)
-                    .getFirstDescendantOfType(ASTVariableDeclaratorId.class)/*.clone() TODO */;
-            }
-
-            // Create a variable name that does not exist in the scope
-            final Scope scope = pIterableDeclaration.getScope();
-
-            int i = 1;
-            String newImage = ORIGINAL_IMAGE;
-            // TODO: find if there is any NameDeclaration of the given class already declared with the given image
-            // TODO: idea of implementation: getDeclarations of the given class and iterate all over those declarations
-            //  comparing the given image with the image of each iteration.
-            //  This should be done not only for current scope but up to the root scope,
-            //      so as to ensure we are not screwing it up overriding an already declared variable
-            //      and changing its value in the current scope
-            //  Note that the `equals` of VariableNameDeclaration is done through the image field
-            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
-                newImage = ORIGINAL_IMAGE + i++;
-            }
-
-            // Create the node and the variable declaration with the chosen image
-            final ASTVariableDeclaratorId variableDeclaratorId = new ASTVariableDeclaratorId(JJTVARIABLEDECLARATORID);
-            variableDeclaratorId.setImage(newImage);
-            final VariableNameDeclaration nameDeclaration = new VariableNameDeclaration(variableDeclaratorId);
-            variableDeclaratorId.getScope().addDeclaration(nameDeclaration);
-            variableDeclaratorId.setNameDeclaration(nameDeclaration);
-            return variableDeclaratorId;
-        }
-
-        private ASTType buildType(final VariableNameDeclaration pIterableDeclaration) {
-            final ASTFormalParameter formalParameter = pIterableDeclaration.getNode().getFirstParentOfType(ASTFormalParameter.class);
-            ASTReferenceType listReferenceType =
-                formalParameter.getFirstDescendantOfType(ASTReferenceType.class).getFirstChildOfType(ASTReferenceType.class);
-            if (listReferenceType == null) { // no generic type for list
-                listReferenceType = new ASTReferenceType(JJTREFERENCETYPE);
-                final ASTClassOrInterfaceType objectClassOrInterfaceType = new ASTClassOrInterfaceType(JJTCLASSORINTERFACETYPE);
-                objectClassOrInterfaceType.setType(Object.class);
-                listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
-            } else {
-                listReferenceType = listReferenceType/*.clone() TODO */; // So as not to detach the old node from the original parent
-                // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
-                //  but to not remove that string region if this cloned node is removed
-                //  TODO: i.e., this will be like a `new` node but with an `original` string reference
-            }
-            final ASTType listType = new ASTType(JJTTYPE);
-            listType.setChild(listReferenceType, 0);
-            return listType;
-        }
-    }
-
-    // TODO: this is the way of making the change building a string to grab the needed node structure.
-    //  It may be used in conjunction with the stringify logic to be implemented later.
-    private static class StringListLoopFix implements RuleViolationAutoFixer {
-        private final VariableNameDeclaration iterableDeclaration;
-
-        private StringListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
-            this.iterableDeclaration = pIterableDeclaration;
-        }
-
-        private static String stream(final String varType, final String varName, final String collectionName) {
-            return String.format("for (%s %s : %s) { ; }", varType, varName, collectionName);
-        }
-
-        @Override
-        public void apply(final Node node, final NodeFixer nodeFixer) {
-            final ASTForStatement forStatement = (ASTForStatement) node;
-
-            final String varType = getVarType();
-            /*
-             * TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
-             * The name to be created can be: aCollectionName[number] where number should start form 1 and be used only
-             * if the aCollectionName var exists, so as to ensure that the variable name is unique.
-             * So, for example, if aCollectionName, aCollectionName1, aCollectionName2 exist, then the variable name
-             * should be aCollectionName3.
-             */
-            final String varName = "";
-            final String collectionName = ""; // TODO: have to get the collection (list) name
-
-            final String stream = stream(varType, varName, collectionName);
-            final CustomJavaParser<ASTForStatement> javaParser = new CustomJavaParser<>(stream);
-            final ASTForStatement forEachStatement = javaParser.getNode();
-            forStatement.setChild(forEachStatement.jjtGetChild(0), 0); // replace ForInit with LocalVariableDeclaration
-            forStatement.setChild(forEachStatement.jjtGetChild(1), 1); // replace Expression with new Expression
-            forStatement.removeChild(2); // remove ForUpdate
-
-            /*
-             * TODO: update the statement so as to replace ALL the get(i) occurrences with the varName name.
-             * If there was an entire line that declared the variable inside the statement, remove that line.
-             */
-        }
-
-        private String getVarType() {
-            // iterableDeclaration is sibling of ASTReferenceType, with common parent `ASTType`
-            final ASTType astType = iterableDeclaration.getNode().getFirstParentOfType(ASTType.class);
-            final Node listClassOrInterfaceType = astType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
-            // As this is a list, it should have 0 or 1 child of type `TypeArguments` & grandchild `TypeArgument`
-            // If 0, list elements are of type `Object`
-            // Else, list elements are of the type determined by `TypeArguments`
-            if (listClassOrInterfaceType.jjtGetNumChildren() == 0) {
-                return "Object";
-            }
-
-            // Get the TypeArguments, and then the TypeArgument
-            return stringify((ASTTypeArgument) listClassOrInterfaceType.jjtGetChild(0).jjtGetChild(0));
-        }
-
-        /*
-         * ===================================================
-         * -- Idea --
-         * In the visitor version, if no change is detected in any descendants of the current node, then
-         * the visitor should skip that branch (DO NOT stringify it, its pointless), unless a previous call to
-         * stringifying an updated node has been called.
-         *
-         * ===================================================
-         * -- Step 1: Finding Rewrite Events --
-         *
-         * Let's start with an example case, where we have one node with two children, and we are standing
-         * on that node, so we know that it hasn't suffered any changes.
-         * We may find if our own children have been modified first, in order to check if we should generate
-         * a text operation for them.
-         * We find that none of them have been modified, so we don't have to rewrite them.
-         * Given this, we can check for advance if we have to continue visiting any of these children.
-         * If one node descendants haven't suffered any modifications, then its pointless to visit that branch
-         * of the ast.
-         * We therefore ask, for each child node, if childNode.hasAnyDescendantsBeenModified.
-         * We find that the first one has no descendant modified, but the second one does.
-         *
-         * Given this, we skip the visitation of the first child, as we know that that AST branch has not been modified.
-         * Hence, we continue navigating the branch of the second child.
-         * When we visit that child, we find that it has two children.
-         * The first one hasn't been modified and doesn't have any descendant modified.
-         * The second child has been updated itself, so we start CREATING TEXT OPERATIONS
-         * JUST FOR THE UPDATED CHILD OF THE CURRENT NODE (i.e., for this second child only).
-         * With this in mind, what we do is to skip the first child (it hasn't been modified & its branch hadn't
-         * suffered any modification), and generate a text operation to update the string representation of the
-         * second child.
-         *
-         * Note that all this stuff can be performed in a language-independent way,
-         * as we are only finding rewrite events, which should be generated for nodes of all PMD supported languages.
-         *
-         * ===================================================
-         * -- Step 2: Translating Rewrite Events to Text Operations --
-         * We shall answer the question `How are text operations generated?`
-         * Before starting, bare in mind that THIS IS COMPLETE DIFFERENT STUFF/FLOW TO THE MENTIONED ABOVE.
-         *
-         * Now, we are in a context where we know that the current node has been modified, and that this change
-         * has to be represented as a text operation.
-         * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node
-         * and its characteristics.
-         *
-         * Note that as nodes of each PMD supported language have their own characteristics,
-         * this flow is language-dependent (just in the case of replace/insert events, as we explain below).
-         *
-         * Let's suppose that we are dealing with Java nodes, and that the current node is a
-         * `ClassOrInterfaceDeclaration`. Then this node may have changed its image (i.e., the class name),
-         * any of the modifiers (final, public, abstract, static, etc.), or whatsoever.
-         * Depending on the type of modification it has been performed, one action may be taken over the other.
-         * - Remove modifications are the easiest to deal with, because they can be treated just with the `Node`
-         * interface: get the region represented by that node, and remove it from the original source.
-         * In this case only, translation of rewrite events into text operations is language-independent.
-         * - On the other hand, both insert and replace operations are a bit more tricky.
-         *
-         * Let's deal with the replace operation, which may be the most difficult one, so as to cover all the cases
-         * at once.
-         * For making a replacement, we should consider all the region of the node that has been replaced,
-         * and transform the new node in its string representation, so as to insert this new text in the region of the
-         * old node's matching text.
-         * The tricky part is that, as we should represent the current node as string, this involves stringifying all
-         * the descendant nodes of the current node. But, it may happen that the current (new) node, that is replacing
-         * the original node, has been created with some parts of original nodes (so, its string representation SHOULD
-         * be taken from the original file) and some other parts with new nodes (which don't have a string
-         * representation, and must therefore be generated).
-         *
-         * // --------------------------------------------------------------------------------------------------------
-         * // Thinking if it should be a good idea to generate all the token string when creating the nodes
-         * // and updating its context (i.e., concatenating the new representation with the original tokens),
-         * // or just rewriting the nodes as string as I was saying...
-         * // I'll go for the second one, because updating tokens context depending on what the user creates
-         * // or does not create may be a little resources-consumer and not as simple to do.
-         * // Eclipse does as I've chosen.
-         * // --------------------------------------------------------------------------------------------------------
-         *
-         * Resuming the idea, we should discriminate original nodes from new nodes when getting its string
-         * representation.
-         * Let's keep using the same example. Recall that we are in a `Java` context and that
-         * the current node that has replaced the original node is of type `ClassOrInterfaceDeclaration`.
-         * So, we get all the current node characteristics as string, and then go and get its children string
-         * representation (actually, the order in which the children strings are grabbed depends on the characteristics
-         * of each type of node for each language).
-         * Let's suppose that the `ClassOrInterfaceDeclaration` node has 2 children (it doesn't matter if this is not
-         * even possible; it's just for an illustrative purpose). How do we do to know if a child is original or new?
-         * Well, we should first ask if the children have changed themselves.
-         * Let's suppose that the first child hasn't changed.
-         * So, we ask it firstChildNode.hasAnyDescendantBeenModified.
-         * - If this is false, then all the child's children nodes string representation may be taken from the
-         * original file. For this, we take the region of the first child node and grab all the string of that region
-         * from the original file (perhaps, we can enqueue a read operation or sth of that sort so as to read all
-         * string sections from the file at once).
-         * // TODO: have to think how to solve this issue so as not to downgrade performance that much
-         * - If this is true, then we shall grab each exclusive parent region so as to get the
-         * current node string section from the original file, and then concatenate the string
-         * for each of its children. The exclusive parent region may be obtained by making a xor between the parent
-         * region and each of the children regions. Given this, the exclusive parent region is indeed an array of
-         * regions.
-         *   The string for each child may be obtained using the same logic as stated above (i.e., build the
-         *   new string for the new nodes and grab the original string for the original nodes).
-         *
-         * ===================================================
-         * In this way, we are enforcing to keep the user string representation as much as possible.
-         * With the example below, I'll try to show this behaviour.
-         *
-         * Other notes & keys:
-         * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
-         * so as not to make extra operations when not needed, but save the computation result once the ast is traversed
-         * to find the answer to this question.
-         * - It would be nice if nodes with custom characteristics (like access nodes in java) can have regions
-         * for those characteristics identified, in order to just generate text operations for those regions instead
-         * that for the entire node region.
-         */
-
-        // xnow primitive version: this may be largely improved as explained above
-        private String stringify(final ASTTypeArgument typeArgument) {
-            final StringBuilder sb = new StringBuilder();
-            if (typeArgument.isNew()) {
-                stringifyNew(typeArgument, sb);
-            } else {
-                // stringifyOriginal(typeArgument, sb); // TODO as explained above
-            }
-            return sb.toString();
-        }
-
-        private void stringifyNew(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
-            sb.append(classOrInterfaceType.getImage());
-            stringifyChildren(classOrInterfaceType, sb);
-        }
-
-        private void stringifyChildren(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
-            for (int i = 0; i < classOrInterfaceType.jjtGetNumChildren(); i++) {
-                final Node childNode = classOrInterfaceType.jjtGetChild(i);
-                if (!(childNode instanceof ASTTypeArguments)) { // currently, we are expecting only this kind of child
-                    continue;
-                }
-                stringifyNew((ASTTypeArguments) childNode, sb);
-            }
-        }
-
-        private void stringifyNew(final ASTTypeArguments typeArguments, final StringBuilder sb) {
-            sb.append("<");
-            for (int i = 0; i < typeArguments.jjtGetNumChildren(); i++) {
-                final Node childNode = typeArguments.jjtGetChild(i);
-                if (!(childNode instanceof ASTTypeArgument)) { // currently, we are expecting only this kind of child
-                    continue;
-                }
-                stringifyNew((ASTTypeArgument) childNode, sb);
-                if (i < typeArguments.jjtGetNumChildren() - 1) { // if this is not the last child
-                    sb.append(",");
-                }
-            }
-            sb.append(">");
-        }
-
-        private void stringifyNew(final ASTTypeArgument typeArgument, final StringBuilder sb) {
-            // TODO: we should handle the annotation & wildcardBounds cases here; see Java.jjt file
-            for (int i = 0; i < typeArgument.jjtGetNumChildren(); i++) {
-                final Node childNode = typeArgument.jjtGetChild(i);
-                if (!(childNode instanceof ReferenceType)) {
-                    continue;
-                }
-                stringifyNew((ASTReferenceType) childNode, sb);
-            }
-        }
-
-        private void stringifyNew(final ASTReferenceType referenceType, final StringBuilder sb) {
-            // TODO: we should handle the annotation cases here; see Java.jjt file
-            for (int i = 0; i < referenceType.jjtGetNumChildren(); i++) {
-                final Node childNode = referenceType.jjtGetChild(i);
-                if (childNode instanceof ASTPrimitiveType) {
-                    stringifyNew((ASTPrimitiveType) childNode, sb);
-                } else if (childNode instanceof ASTClassOrInterfaceType) {
-                    stringifyNew((ASTClassOrInterfaceType) childNode, sb);
-                } else {
-                    continue;
-                }
-                for (int j = 0; j < referenceType.getArrayDepth(); j++) {
-                    sb.append("[]");
-                }
-            }
-        }
-
-        private void stringifyNew(final ASTPrimitiveType primitiveType, final StringBuilder sb) {
-            sb.append(primitiveType.getType());
-        }
-
-        /*
-         * Note that first removing the old children of the `ForStatement` (`ForInit` & `Expression`)
-         * and then inserting the new children (`LocalVariableDeclaration` & `Expression`)
-         * works the same because of the merging of the rewrite events
-         */
-    }
-
-    // TODO: this class should be available for all rules
-    private static class CustomJavaParser<T> extends JavaParser {
-
-        CustomJavaParser(final String stream) {
-            super(new JavaCharStream(new StringReader(stream)));
-        }
-
-        public T getNode() {
-            return (T) jjtree.popNode();
-        }
-    }
-
     /* Finds the declaration of the index variable and its occurrences */
     private Entry<VariableNameDeclaration, List<NameOccurrence>> getIndexVarDeclaration(ASTForInit init, ASTForUpdate update) {
         if (init == null) {
@@ -883,5 +442,452 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         return false;
     }
 
+    // =====================================================================================
+    private static class ListLoopFix implements RuleViolationAutoFixer {
+        private final VariableNameDeclaration iterableDeclaration;
+        private final List<NameOccurrence> indexOccurrences;
+        private final ListGetOccurrences listGetOccurrences;
+
+        private ListLoopFix(final VariableNameDeclaration pIterableDeclaration,
+                            final List<NameOccurrence> pIndexOccurrences) {
+            this.iterableDeclaration = pIterableDeclaration;
+            this.indexOccurrences = pIndexOccurrences;
+            this.listGetOccurrences = getListGetIndexOccurrences(iterableDeclaration, indexOccurrences);
+        }
+
+        @Override
+        // TODO: update SCOPE correctly; not doing it here because it should be done `transparently` for the user
+        public void apply(final Node forStatement, final NodeFixer nodeFixer) {
+            // Update the first `for` child node (i.e., the ForInit node)
+            final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
+            forStatement.setChild(localVariableDeclaration, 0);
+            // TODO: think: Perhaps, other way to do it can be:
+            //  forStatement.getFirstChildOfType(ASTForInit.class).replaceWith(localVariableDeclaration);
+            // This will replace the self node with the given node at the self node index in the parent
+
+            // Update the expression child of the for loop to match the for each expression
+            final ASTExpression astExpression = ASTExpression.class.cast(forStatement.jjtGetChild(1));
+            astExpression.setChild(buildPrimaryExpression(iterableDeclaration), 0);
+            // Remove the third child of the `for` node (i.e., the ForUpdate node)
+            forStatement.removeChild(2);
+            // TODO: IMPORTANT: This can also be performed in the following way:
+            //  forStatement.getFirstChildOfType(ASTForUpdate.class).remove();
+
+            final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration);
+            replaceListAccessWithForEachVariable(listGetOccurrences, newForeachVariableExpression);
+        }
+
+        private ASTExpression buildNewForEachVariableExpression(final ASTLocalVariableDeclaration localVariableDeclaration) {
+            final VariableNameDeclaration variableNameDeclaration =
+                localVariableDeclaration.getFirstDescendantOfType(ASTVariableDeclaratorId.class).getNameDeclaration();
+            final ASTExpression expression = new ASTExpression(JJTEXPRESSION);
+            expression.setChild(buildPrimaryExpression(variableNameDeclaration), 0);
+            return expression;
+        }
+
+        private void replaceListAccessWithForEachVariable(final ListGetOccurrences pListGetOccurrences,
+                                                          final ASTExpression newForeachVariableExpression) {
+            for (final ASTExpression expression : pListGetOccurrences.assignmentExpressions) {
+                // It has to be removed in favor of the foreach variable
+                // Note that if this is an assignment, then the `for` statement is enforced to have a block to compile
+                expression.getFirstParentOfType(ASTBlockStatement.class).remove();
+            }
+
+            for (final ASTExpression expression : pListGetOccurrences.usageExpressions) {
+                // It has to be replaced with the foreach variable
+                expression.jjtGetParent().setChild(newForeachVariableExpression/*.clone() TODO */, expression.jjtGetChildIndex());
+                // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
+            }
+        }
+
+        private static class ListGetOccurrences {
+            private final List<ASTExpression> assignmentExpressions;
+            private final List<ASTExpression> usageExpressions;
+
+            private ListGetOccurrences(final List<ASTExpression> pAssignmentExpressions,
+                                       final List<ASTExpression> pUsageExpressions) {
+                this.assignmentExpressions = pAssignmentExpressions;
+                this.usageExpressions = pUsageExpressions;
+            }
+        }
+
+        private ListGetOccurrences getListGetIndexOccurrences(final VariableNameDeclaration listDeclaration,
+                                                              final List<NameOccurrence> pIndexOccurrences) {
+            final String listName = listDeclaration.getName();
+
+            final List<ASTExpression> assignmentExpressions = new LinkedList<>();
+            final List<ASTExpression> usageExpressions = new LinkedList<>();
+
+            for (NameOccurrence indexOccurrence : pIndexOccurrences) {
+                if (!occurenceIsListGet(indexOccurrence, listName)) {
+                    continue;
+                }
+                final ASTExpression expression = indexOccurrence.getLocation().getFirstParentOfType(ASTExpression.class);
+                if (expression.jjtGetParent() instanceof ASTVariableInitializer) {
+                    assignmentExpressions.add(expression);
+                } else {
+                    usageExpressions.add(expression);
+                }
+            }
+
+            return new ListGetOccurrences(assignmentExpressions, usageExpressions);
+        }
+
+        private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTName iterableName = new ASTName(JJTNAME);
+            iterableName.setImage(pIterableDeclaration.getImage());
+            iterableName.setType(pIterableDeclaration.getType());
+            iterableName.setNameDeclaration(pIterableDeclaration);
+            final ASTPrimaryPrefix primaryPrefix = new ASTPrimaryPrefix(JJTPRIMARYPREFIX);
+            primaryPrefix.setChild(iterableName, 0);
+            final ASTPrimaryExpression primaryExpression = new ASTPrimaryExpression(JJTPRIMARYEXPRESSION);
+            primaryExpression.setChild(primaryPrefix, 0);
+            return primaryExpression;
+        }
+
+        private ASTLocalVariableDeclaration buildLocalVariableDeclaration(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTLocalVariableDeclaration localVariableDeclaration =
+                new ASTLocalVariableDeclaration(JJTLOCALVARIABLEDECLARATION);
+            localVariableDeclaration.setChild(buildType(pIterableDeclaration), 0);
+            localVariableDeclaration.setChild(buildVariableDeclarator(pIterableDeclaration), 1);
+            return localVariableDeclaration;
+        }
+
+        private ASTVariableDeclarator buildVariableDeclarator(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTVariableDeclaratorId variableDeclaratorId = buildVariableDeclaratorId(listGetOccurrences, pIterableDeclaration);
+            final ASTVariableDeclarator variableDeclarator = new ASTVariableDeclarator(JJTVARIABLEDECLARATOR);
+            variableDeclarator.setChild(variableDeclaratorId, 0);
+            return variableDeclarator;
+        }
+
+
+        private static final String ORIGINAL_IMAGE = "aListElem";
+        /**
+         * If there is a statement in the `for` body like `T elem = list.get(i)`, grab the `elem` name;
+         * if not, create a variable name such as it does not already exist in the scope.
+         */
+        private ASTVariableDeclaratorId buildVariableDeclaratorId(final ListGetOccurrences pListGetOccurrences,
+                                                                  final VariableNameDeclaration pIterableDeclaration) {
+            if (!pListGetOccurrences.assignmentExpressions.isEmpty()) {
+                // Just getting the first one that will be the only one assigned; other assignments should be removed,
+                // and those variables usages replaced with the new one // TODO
+                return pListGetOccurrences.assignmentExpressions.get(0)
+                    .getFirstParentOfType(ASTLocalVariableDeclaration.class)
+                    .getFirstDescendantOfType(ASTVariableDeclaratorId.class)/*.clone() TODO */;
+            }
+
+            // Create a variable name that does not exist in the scope
+            final Scope scope = pIterableDeclaration.getScope();
+
+            int i = 1;
+            String newImage = ORIGINAL_IMAGE;
+            // TODO: find if there is any NameDeclaration of the given class already declared with the given image
+            // TODO: idea of implementation: getDeclarations of the given class and iterate all over those declarations
+            //  comparing the given image with the image of each iteration.
+            //  This should be done not only for current scope but up to the root scope,
+            //      so as to ensure we are not screwing it up overriding an already declared variable
+            //      and changing its value in the current scope
+            //  Note that the `equals` of VariableNameDeclaration is done through the image field
+            while (scope.isDeclaredAs(VariableNameDeclaration.class, newImage)) { // TODO: not now, but bare it in mind
+                newImage = ORIGINAL_IMAGE + i++;
+            }
+
+            // Create the node and the variable declaration with the chosen image
+            final ASTVariableDeclaratorId variableDeclaratorId = new ASTVariableDeclaratorId(JJTVARIABLEDECLARATORID);
+            variableDeclaratorId.setImage(newImage);
+            final VariableNameDeclaration nameDeclaration = new VariableNameDeclaration(variableDeclaratorId);
+            variableDeclaratorId.getScope().addDeclaration(nameDeclaration);
+            variableDeclaratorId.setNameDeclaration(nameDeclaration);
+            return variableDeclaratorId;
+        }
+
+        private ASTType buildType(final VariableNameDeclaration pIterableDeclaration) {
+            final ASTFormalParameter formalParameter = pIterableDeclaration.getNode().getFirstParentOfType(ASTFormalParameter.class);
+            ASTReferenceType listReferenceType =
+                formalParameter.getFirstDescendantOfType(ASTReferenceType.class).getFirstChildOfType(ASTReferenceType.class);
+            if (listReferenceType == null) { // no generic type for list
+                listReferenceType = new ASTReferenceType(JJTREFERENCETYPE);
+                final ASTClassOrInterfaceType objectClassOrInterfaceType = new ASTClassOrInterfaceType(JJTCLASSORINTERFACETYPE);
+                objectClassOrInterfaceType.setType(Object.class);
+                listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
+            } else {
+                listReferenceType = listReferenceType/*.clone() TODO */; // So as not to detach the old node from the original parent
+                // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
+                //  but to not remove that string region if this cloned node is removed
+                //  TODO: i.e., this will be like a `new` node but with an `original` string reference
+            }
+            final ASTType listType = new ASTType(JJTTYPE);
+            listType.setChild(listReferenceType, 0);
+            return listType;
+        }
+    }
+
+
+
+
+
+    // =====================================================================================
+
+    // TODO: this is the way of making the change building a string to grab the needed node structure.
+    //  It may be used in conjunction with the stringify logic to be implemented later.
+    private static class StringListLoopFix implements RuleViolationAutoFixer {
+        private final VariableNameDeclaration iterableDeclaration;
+
+        private StringListLoopFix(final VariableNameDeclaration pIterableDeclaration) {
+            this.iterableDeclaration = pIterableDeclaration;
+        }
+
+        private static String stream(final String varType, final String varName, final String collectionName) {
+            return String.format("for (%s %s : %s) { ; }", varType, varName, collectionName);
+        }
+
+        @Override
+        public void apply(final Node node, final NodeFixer nodeFixer) {
+            final ASTForStatement forStatement = (ASTForStatement) node;
+
+            final String varType = getVarType();
+            /*
+             * TODO: have to write a variable name if it does not exists; if it exists in the statement, we should use that name
+             * The name to be created can be: aCollectionName[number] where number should start form 1 and be used only
+             * if the aCollectionName var exists, so as to ensure that the variable name is unique.
+             * So, for example, if aCollectionName, aCollectionName1, aCollectionName2 exist, then the variable name
+             * should be aCollectionName3.
+             */
+            final String varName = "";
+            final String collectionName = ""; // TODO: have to get the collection (list) name
+
+            final String stream = stream(varType, varName, collectionName);
+            final CustomJavaParser<ASTForStatement> javaParser = new CustomJavaParser<>(stream);
+            final ASTForStatement forEachStatement = javaParser.getNode();
+            forStatement.setChild(forEachStatement.jjtGetChild(0), 0); // replace ForInit with LocalVariableDeclaration
+            forStatement.setChild(forEachStatement.jjtGetChild(1), 1); // replace Expression with new Expression
+            forStatement.removeChild(2); // remove ForUpdate
+
+            /*
+             * TODO: update the statement so as to replace ALL the get(i) occurrences with the varName name.
+             * If there was an entire line that declared the variable inside the statement, remove that line.
+             */
+        }
+
+        private String getVarType() {
+            // iterableDeclaration is sibling of ASTReferenceType, with common parent `ASTType`
+            final ASTType astType = iterableDeclaration.getNode().getFirstParentOfType(ASTType.class);
+            final Node listClassOrInterfaceType = astType.getFirstDescendantOfType(ASTClassOrInterfaceType.class);
+            // As this is a list, it should have 0 or 1 child of type `TypeArguments` & grandchild `TypeArgument`
+            // If 0, list elements are of type `Object`
+            // Else, list elements are of the type determined by `TypeArguments`
+            if (listClassOrInterfaceType.jjtGetNumChildren() == 0) {
+                return "Object";
+            }
+
+            // Get the TypeArguments, and then the TypeArgument
+            return stringify((ASTTypeArgument) listClassOrInterfaceType.jjtGetChild(0).jjtGetChild(0));
+        }
+
+        /*
+         * ===================================================
+         * -- Idea --
+         * In the visitor version, if no change is detected in any descendants of the current node, then
+         * the visitor should skip that branch (DO NOT stringify it, its pointless), unless a previous call to
+         * stringifying an updated node has been called.
+         *
+         * ===================================================
+         * -- Step 1: Finding Rewrite Events --
+         *
+         * Let's start with an example case, where we have one node with two children, and we are standing
+         * on that node, so we know that it hasn't suffered any changes.
+         * We may find if our own children have been modified first, in order to check if we should generate
+         * a text operation for them.
+         * We find that none of them have been modified, so we don't have to rewrite them.
+         * Given this, we can check for advance if we have to continue visiting any of these children.
+         * If one node descendants haven't suffered any modifications, then its pointless to visit that branch
+         * of the ast.
+         * We therefore ask, for each child node, if childNode.hasAnyDescendantsBeenModified.
+         * We find that the first one has no descendant modified, but the second one does.
+         *
+         * Given this, we skip the visitation of the first child, as we know that that AST branch has not been modified.
+         * Hence, we continue navigating the branch of the second child.
+         * When we visit that child, we find that it has two children.
+         * The first one hasn't been modified and doesn't have any descendant modified.
+         * The second child has been updated itself, so we start CREATING TEXT OPERATIONS
+         * JUST FOR THE UPDATED CHILD OF THE CURRENT NODE (i.e., for this second child only).
+         * With this in mind, what we do is to skip the first child (it hasn't been modified & its branch hadn't
+         * suffered any modification), and generate a text operation to update the string representation of the
+         * second child.
+         *
+         * Note that all this stuff can be performed in a language-independent way,
+         * as we are only finding rewrite events, which should be generated for nodes of all PMD supported languages.
+         *
+         * ===================================================
+         * -- Step 2: Translating Rewrite Events to Text Operations --
+         * We shall answer the question `How are text operations generated?`
+         * Before starting, bare in mind that THIS IS COMPLETE DIFFERENT STUFF/FLOW TO THE MENTIONED ABOVE.
+         *
+         * Now, we are in a context where we know that the current node has been modified, and that this change
+         * has to be represented as a text operation.
+         * As THIS node has changed, we may, for sure, generate a new string for the CURRENT node
+         * and its characteristics.
+         *
+         * Note that as nodes of each PMD supported language have their own characteristics,
+         * this flow is language-dependent (just in the case of replace/insert events, as we explain below).
+         *
+         * Let's suppose that we are dealing with Java nodes, and that the current node is a
+         * `ClassOrInterfaceDeclaration`. Then this node may have changed its image (i.e., the class name),
+         * any of the modifiers (final, public, abstract, static, etc.), or whatsoever.
+         * Depending on the type of modification it has been performed, one action may be taken over the other.
+         * - Remove modifications are the easiest to deal with, because they can be treated just with the `Node`
+         * interface: get the region represented by that node, and remove it from the original source.
+         * In this case only, translation of rewrite events into text operations is language-independent.
+         * - On the other hand, both insert and replace operations are a bit more tricky.
+         *
+         * Let's deal with the replace operation, which may be the most difficult one, so as to cover all the cases
+         * at once.
+         * For making a replacement, we should consider all the region of the node that has been replaced,
+         * and transform the new node in its string representation, so as to insert this new text in the region of the
+         * old node's matching text.
+         * The tricky part is that, as we should represent the current node as string, this involves stringifying all
+         * the descendant nodes of the current node. But, it may happen that the current (new) node, that is replacing
+         * the original node, has been created with some parts of original nodes (so, its string representation SHOULD
+         * be taken from the original file) and some other parts with new nodes (which don't have a string
+         * representation, and must therefore be generated).
+         *
+         * // --------------------------------------------------------------------------------------------------------
+         * // Thinking if it should be a good idea to generate all the token string when creating the nodes
+         * // and updating its context (i.e., concatenating the new representation with the original tokens),
+         * // or just rewriting the nodes as string as I was saying...
+         * // I'll go for the second one, because updating tokens context depending on what the user creates
+         * // or does not create may be a little resources-consumer and not as simple to do.
+         * // Eclipse does as I've chosen.
+         * // --------------------------------------------------------------------------------------------------------
+         *
+         * Resuming the idea, we should discriminate original nodes from new nodes when getting its string
+         * representation.
+         * Let's keep using the same example. Recall that we are in a `Java` context and that
+         * the current node that has replaced the original node is of type `ClassOrInterfaceDeclaration`.
+         * So, we get all the current node characteristics as string, and then go and get its children string
+         * representation (actually, the order in which the children strings are grabbed depends on the characteristics
+         * of each type of node for each language).
+         * Let's suppose that the `ClassOrInterfaceDeclaration` node has 2 children (it doesn't matter if this is not
+         * even possible; it's just for an illustrative purpose). How do we do to know if a child is original or new?
+         * Well, we should first ask if the children have changed themselves.
+         * Let's suppose that the first child hasn't changed.
+         * So, we ask it firstChildNode.hasAnyDescendantBeenModified.
+         * - If this is false, then all the child's children nodes string representation may be taken from the
+         * original file. For this, we take the region of the first child node and grab all the string of that region
+         * from the original file (perhaps, we can enqueue a read operation or sth of that sort so as to read all
+         * string sections from the file at once).
+         * // TODO: have to think how to solve this issue so as not to downgrade performance that much
+         * - If this is true, then we shall grab each exclusive parent region so as to get the
+         * current node string section from the original file, and then concatenate the string
+         * for each of its children. The exclusive parent region may be obtained by making a xor between the parent
+         * region and each of the children regions. Given this, the exclusive parent region is indeed an array of
+         * regions.
+         *   The string for each child may be obtained using the same logic as stated above (i.e., build the
+         *   new string for the new nodes and grab the original string for the original nodes).
+         *
+         * ===================================================
+         * In this way, we are enforcing to keep the user string representation as much as possible.
+         * With the example below, I'll try to show this behaviour.
+         *
+         * Other notes & keys:
+         * - It would be nice to have a lazy computation of the hasAnyDescendantBeenModified method,
+         * so as not to make extra operations when not needed, but save the computation result once the ast is traversed
+         * to find the answer to this question.
+         * - It would be nice if nodes with custom characteristics (like access nodes in java) can have regions
+         * for those characteristics identified, in order to just generate text operations for those regions instead
+         * that for the entire node region.
+         */
+
+        // xnow primitive version: this may be largely improved as explained above
+        private String stringify(final ASTTypeArgument typeArgument) {
+            final StringBuilder sb = new StringBuilder();
+            if (typeArgument.isNew()) {
+                stringifyNew(typeArgument, sb);
+            } else {
+                // stringifyOriginal(typeArgument, sb); // TODO as explained above
+            }
+            return sb.toString();
+        }
+
+        private void stringifyNew(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
+            sb.append(classOrInterfaceType.getImage());
+            stringifyChildren(classOrInterfaceType, sb);
+        }
+
+        private void stringifyChildren(final ASTClassOrInterfaceType classOrInterfaceType, final StringBuilder sb) {
+            for (int i = 0; i < classOrInterfaceType.jjtGetNumChildren(); i++) {
+                final Node childNode = classOrInterfaceType.jjtGetChild(i);
+                if (!(childNode instanceof ASTTypeArguments)) { // currently, we are expecting only this kind of child
+                    continue;
+                }
+                stringifyNew((ASTTypeArguments) childNode, sb);
+            }
+        }
+
+        private void stringifyNew(final ASTTypeArguments typeArguments, final StringBuilder sb) {
+            sb.append("<");
+            for (int i = 0; i < typeArguments.jjtGetNumChildren(); i++) {
+                final Node childNode = typeArguments.jjtGetChild(i);
+                if (!(childNode instanceof ASTTypeArgument)) { // currently, we are expecting only this kind of child
+                    continue;
+                }
+                stringifyNew((ASTTypeArgument) childNode, sb);
+                if (i < typeArguments.jjtGetNumChildren() - 1) { // if this is not the last child
+                    sb.append(",");
+                }
+            }
+            sb.append(">");
+        }
+
+        private void stringifyNew(final ASTTypeArgument typeArgument, final StringBuilder sb) {
+            // TODO: we should handle the annotation & wildcardBounds cases here; see Java.jjt file
+            for (int i = 0; i < typeArgument.jjtGetNumChildren(); i++) {
+                final Node childNode = typeArgument.jjtGetChild(i);
+                if (!(childNode instanceof ReferenceType)) {
+                    continue;
+                }
+                stringifyNew((ASTReferenceType) childNode, sb);
+            }
+        }
+
+        private void stringifyNew(final ASTReferenceType referenceType, final StringBuilder sb) {
+            // TODO: we should handle the annotation cases here; see Java.jjt file
+            for (int i = 0; i < referenceType.jjtGetNumChildren(); i++) {
+                final Node childNode = referenceType.jjtGetChild(i);
+                if (childNode instanceof ASTPrimitiveType) {
+                    stringifyNew((ASTPrimitiveType) childNode, sb);
+                } else if (childNode instanceof ASTClassOrInterfaceType) {
+                    stringifyNew((ASTClassOrInterfaceType) childNode, sb);
+                } else {
+                    continue;
+                }
+                for (int j = 0; j < referenceType.getArrayDepth(); j++) {
+                    sb.append("[]");
+                }
+            }
+        }
+
+        private void stringifyNew(final ASTPrimitiveType primitiveType, final StringBuilder sb) {
+            sb.append(primitiveType.getType());
+        }
+
+        /*
+         * Note that first removing the old children of the `ForStatement` (`ForInit` & `Expression`)
+         * and then inserting the new children (`LocalVariableDeclaration` & `Expression`)
+         * works the same because of the merging of the rewrite events
+         */
+    }
+
+    // TODO: this class should be available for all rules
+    private static class CustomJavaParser<T> extends JavaParser {
+
+        CustomJavaParser(final String stream) {
+            super(new JavaCharStream(new StringReader(stream)));
+        }
+
+        public T getNode() {
+            return (T) jjtree.popNode();
+        }
+    }
 
 }
