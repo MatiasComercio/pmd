@@ -17,6 +17,7 @@ import static net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants.JJTVARIA
 
 import java.io.StringReader;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -133,12 +134,13 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
     private static class ListLoopFix implements RuleViolationAutoFixer {
         private final VariableNameDeclaration iterableDeclaration;
         private final List<NameOccurrence> indexOccurrences;
-        private final ASTLocalVariableDeclaration statementDeclaration; // TODO: doing
+        private final ListGetOccurrences listGetOccurrences;
 
         private ListLoopFix(final VariableNameDeclaration pIterableDeclaration,
                             final List<NameOccurrence> pIndexOccurrences) {
             this.iterableDeclaration = pIterableDeclaration;
             this.indexOccurrences = pIndexOccurrences;
+            this.listGetOccurrences = getListGetIndexOccurrences(iterableDeclaration, indexOccurrences);
         }
 
         @Override
@@ -160,7 +162,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             //  forStatement.getFirstChildOfType(ASTForUpdate.class).remove();
 
             final ASTExpression newForeachVariableExpression = buildNewForEachVariableExpression(localVariableDeclaration);
-            replaceListAccessWithForEachVariable(iterableDeclaration, indexOccurrences, newForeachVariableExpression);
+            replaceListAccessWithForEachVariable(listGetOccurrences, newForeachVariableExpression);
         }
 
         private ASTExpression buildNewForEachVariableExpression(final ASTLocalVariableDeclaration localVariableDeclaration) {
@@ -171,24 +173,52 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
             return expression;
         }
 
-        private void replaceListAccessWithForEachVariable(final VariableNameDeclaration listDeclaration,
-                                                          final List<NameOccurrence> indexOccurrences,
+        private void replaceListAccessWithForEachVariable(final ListGetOccurrences pListGetOccurrences,
                                                           final ASTExpression newForeachVariableExpression) {
+            for (final ASTExpression expression : pListGetOccurrences.assignmentExpressions) {
+                // It has to be removed in favor of the foreach variable
+                // Note that if this is an assignment, then the `for` statement is enforced to have a block to compile
+                expression.getFirstParentOfType(ASTBlockStatement.class).remove();
+            }
+
+            for (final ASTExpression expression : pListGetOccurrences.usageExpressions) {
+                // It has to be replaced with the foreach variable
+                expression.jjtGetParent().setChild(newForeachVariableExpression/*.clone() TODO */, expression.jjtGetChildIndex());
+                // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
+            }
+        }
+
+        private static class ListGetOccurrences {
+            private final List<ASTExpression> assignmentExpressions;
+            private final List<ASTExpression> usageExpressions;
+
+            private ListGetOccurrences(final List<ASTExpression> pAssignmentExpressions,
+                                       final List<ASTExpression> pUsageExpressions) {
+                this.assignmentExpressions = pAssignmentExpressions;
+                this.usageExpressions = pUsageExpressions;
+            }
+        }
+
+        private ListGetOccurrences getListGetIndexOccurrences(final VariableNameDeclaration listDeclaration,
+                                                              final List<NameOccurrence> pIndexOccurrences) {
             final String listName = listDeclaration.getName();
 
-            for (NameOccurrence indexOccurrence : indexOccurrences) {
+            final List<ASTExpression> assignmentExpressions = new LinkedList<>();
+            final List<ASTExpression> usageExpressions = new LinkedList<>();
+
+            for (NameOccurrence indexOccurrence : pIndexOccurrences) {
                 if (!occurenceIsListGet(indexOccurrence, listName)) {
                     continue;
                 }
                 final ASTExpression expression = indexOccurrence.getLocation().getFirstParentOfType(ASTExpression.class);
                 if (expression.jjtGetParent() instanceof ASTVariableInitializer) {
-                    // This occurrence is an assignment => it has to be removed in favor of the foreach variable
-                    expression.getFirstParentOfType(ASTBlockStatement.class).remove();
-                } else { // This occurrence is a usage only => it has to be replaced with the foreach variable
-                    expression.jjtGetParent().setChild(newForeachVariableExpression.clone(), expression.jjtGetChildIndex());
-                    // expression.replaceWith(newForeachVariableExpression); // TODO: another usage of the `replaceWith` method
+                    assignmentExpressions.add(expression);
+                } else {
+                    usageExpressions.add(expression);
                 }
             }
+
+            return new ListGetOccurrences(assignmentExpressions, usageExpressions);
         }
 
         private ASTPrimaryExpression buildPrimaryExpression(final VariableNameDeclaration pIterableDeclaration) {
@@ -212,7 +242,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
 
         private ASTVariableDeclarator buildVariableDeclarator(final VariableNameDeclaration pIterableDeclaration) {
-            final ASTVariableDeclaratorId variableDeclaratorId = buildVariableDeclaratorId(pIterableDeclaration);
+            final ASTVariableDeclaratorId variableDeclaratorId = buildVariableDeclaratorId(listGetOccurrences, pIterableDeclaration);
             final ASTVariableDeclarator variableDeclarator = new ASTVariableDeclarator(JJTVARIABLEDECLARATOR);
             variableDeclarator.setChild(variableDeclaratorId, 0);
             return variableDeclarator;
@@ -224,9 +254,14 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * If there is a statement in the `for` body like `T elem = list.get(i)`, grab the `elem` name;
          * if not, create a variable name such as it does not already exist in the scope.
          */
-        private ASTVariableDeclaratorId buildVariableDeclaratorId(final VariableNameDeclaration pIterableDeclaration) {
-            if (statementDeclaration != null) { // Clone the already existing variable declarator id
-                return ASTVariableDeclaratorId.class.cast(statementDeclaration.jjtGetChild(1).jjtGetChild(0)).clone();
+        private ASTVariableDeclaratorId buildVariableDeclaratorId(final ListGetOccurrences pListGetOccurrences,
+                                                                  final VariableNameDeclaration pIterableDeclaration) {
+            if (!pListGetOccurrences.assignmentExpressions.isEmpty()) {
+                // Just getting the first one that will be the only one assigned; other assignments should be removed,
+                // and those variables usages replaced with the new one // TODO
+                return pListGetOccurrences.assignmentExpressions.get(0)
+                    .getFirstParentOfType(ASTLocalVariableDeclaration.class)
+                    .getFirstDescendantOfType(ASTVariableDeclaratorId.class)/*.clone() TODO */;
             }
 
             // Create a variable name that does not exist in the scope
@@ -264,7 +299,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
                 objectClassOrInterfaceType.setType(Object.class);
                 listReferenceType.setChild(objectClassOrInterfaceType, 0); // TODO: this may be `append`? I think it would be nice :smile:
             } else {
-                listReferenceType = listReferenceType.clone(); // So as not to detach the old node from the original parent
+                listReferenceType = listReferenceType/*.clone() TODO */; // So as not to detach the old node from the original parent
                 // TODO: this clone should be intelligent enough to be able to grab the original string from the file,
                 //  but to not remove that string region if this cloned node is removed
                 //  TODO: i.e., this will be like a `new` node but with an `original` string reference
