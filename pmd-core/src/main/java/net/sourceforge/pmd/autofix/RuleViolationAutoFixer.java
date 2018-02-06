@@ -4,8 +4,9 @@
 
 package net.sourceforge.pmd.autofix;
 
-import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.RuleViolation;
 
 public interface RuleViolationAutoFixer {
-    void apply(Node node, NodeFixer nodeFixer);
+    void apply();
+    RuleViolation getRuleViolation();
 }

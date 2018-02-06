@@ -344,6 +344,8 @@ public abstract class AbstractRule extends AbstractPropertySource implements Rul
         RuleContext ruleContext = (RuleContext) data;
         ruleContext.getLanguageVersion().getLanguageVersionHandler().getRuleViolationFactory().addViolation(ruleContext,
                 this, node, this.getMessage(), null);
+        // xnow: just done here, but have to replicate this in all the other `addViolation*` methods
+        ruleContext.add(violationFixer);
     }
 
     /**
