@@ -25,7 +25,7 @@ import javax.lang.model.type.ReferenceType;
 
 import org.jaxen.JaxenException;
 
-import net.sourceforge.pmd.autofix.NodeFixer;
+import net.sourceforge.pmd.autofix.RewritableNode;
 import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
@@ -457,7 +457,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
 
         @Override
         // TODO: update SCOPE correctly; not doing it here because it should be done `transparently` for the user
-        public void apply(final Node forStatement, final NodeFixer nodeFixer) {
+        public void apply(final RewritableNode forStatement) {
             // Update the first `for` child node (i.e., the ForInit node)
             final ASTLocalVariableDeclaration localVariableDeclaration = buildLocalVariableDeclaration(iterableDeclaration);
             forStatement.setChild(localVariableDeclaration, 0);
@@ -642,7 +642,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
         }
 
         @Override
-        public void apply(final Node node, final NodeFixer nodeFixer) {
+        public void apply(final RewritableNode node) {
             final ASTForStatement forStatement = (ASTForStatement) node;
 
             final String varType = getVarType();

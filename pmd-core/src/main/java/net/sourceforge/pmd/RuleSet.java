@@ -12,16 +12,12 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang3.StringUtils;
 
-import net.sourceforge.pmd.autofix.AutoFixableRuleViolation;
-import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
 import net.sourceforge.pmd.benchmark.Benchmark;
 import net.sourceforge.pmd.benchmark.Benchmarker;
 import net.sourceforge.pmd.cache.ChecksumAware;
@@ -507,15 +503,8 @@ public class RuleSet implements ChecksumAware {
                     long end = System.nanoTime();
                     Benchmarker.mark(Benchmark.Rule, rule.getName(), end - start, 1);
                     start = end;
-                    // TODO: add debug logging
-                    final Queue<RuleViolationAutoFixer> ruleViolationAutoFixers = ctx.getRuleViolationAutoFixers(); // TODO: Do not apply fixes of suppressed rules
-                    while (!ruleViolationAutoFixers.isEmpty()) {
-                        final RuleViolationAutoFixer ruleViolationAutoFixer = ruleViolationAutoFixers.poll();
-                        ruleViolationAutoFixer.apply(); // xnow: TODO: this requires updating #850: AutoFixableRuleInterface
-                        end = System.nanoTime();
-                        Benchmarker.mark(Benchmark.Fix, ruleViolationAutoFixer.getName(), end - start, 1);
-                        start = end;
-                    }
+                    // xnow
+                    ctx.applyRuleViolationFixes();
                 }
             } catch (RuntimeException e) {
                 if (ctx.isIgnoreExceptions()) {

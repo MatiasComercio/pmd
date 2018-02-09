@@ -1,4 +1,4 @@
-/*
+/**
  * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
  */
 
@@ -26,10 +26,11 @@ public interface AST {
      * If there is not (after the postFix), then rewrite events will not be recorded.
      */
     void preFix(RuleViolation ruleViolation);
+
     void postFix(RuleViolation ruleViolation);
 
     /*
-     * TODO: we should use a method to enable/disable rewrite methods, in order to avoid the direct usage of this methods
+     * xnow: TODO: we should use a method to enable/disable rewrite methods, in order to avoid the direct usage of this methods
      * during a visiting where we don't expect the user to do so.
      */
 }

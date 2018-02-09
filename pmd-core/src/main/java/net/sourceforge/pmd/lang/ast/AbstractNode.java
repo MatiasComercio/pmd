@@ -7,7 +7,6 @@ package net.sourceforge.pmd.lang.ast;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import java.util.Objects;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,11 +18,12 @@ import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import net.sourceforge.pmd.autofix.RewritableNode;
 import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
 
-public abstract class AbstractNode implements Node {
+public abstract class AbstractNode implements RewritableNode {
 
     protected Node parent;
     protected Node[] children;
@@ -39,6 +39,7 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
+    private AST ast; // xnow: TODO somewhere (idea: visitor right before RuleSets.apply execution)
 
     public AbstractNode(int id) {
         this.id = id;
@@ -415,9 +416,8 @@ public abstract class AbstractNode implements Node {
     @Override
     public void remove() {
         // Detach current node of its parent, if any
-        final Node parent = jjtGetParent();
-        if (parent != null) {
-            parent.removeChild(jjtGetChildIndex());
+        if (parent != null && parent instanceof RewritableNode) {
+            ((RewritableNode) parent).removeChild(jjtGetChildIndex());
         }
     }
 
@@ -453,7 +453,7 @@ public abstract class AbstractNode implements Node {
      * @param index The position where to set the given child.
      * @throws IllegalArgumentException If the index is negative.
      */
-    @Override // TODO: review comments0
+    @Override // TODO: review comments
     public void setChild(final Node child, final int index) { // (partial insert) & replace
         Node oldChild = null;
         if (index < 0) {
@@ -519,10 +519,5 @@ public abstract class AbstractNode implements Node {
         for (int i = index + 1; i < jjtGetNumChildren(); i++) {
             jjtGetChild(i).jjtSetChildIndex(i);
         }
-    }
-
-    @Override
-    public boolean isNew() {
-        return false; // TODO: just for compiling impl
     }
 }

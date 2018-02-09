@@ -8,7 +8,10 @@ import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import net.sourceforge.pmd.autofix.RuleViolationAutoFixer;
+import net.sourceforge.pmd.autofix.RuleViolationFixer;
 import net.sourceforge.pmd.lang.LanguageVersion;
+import net.sourceforge.pmd.lang.ast.Node;
 
 /**
  * The RuleContext provides access to Rule processing state. This information
@@ -34,6 +37,7 @@ public class RuleContext {
     private String sourceCodeFilename;
     private LanguageVersion languageVersion;
     private final ConcurrentMap<String, Object> attributes;
+    private final RuleViolationFixer ruleViolationFixer = new RuleViolationFixer();
     private boolean ignoreExceptions = true;
 
     /**
@@ -235,5 +239,24 @@ public class RuleContext {
      */
     public boolean isIgnoreExceptions() {
         return ignoreExceptions;
+    }
+
+    private RuleViolationFixer getRuleViolationFixer() {
+        return ruleViolationFixer;
+    }
+
+    // xnow
+    public void addRuleViolation(final RuleViolation ruleViolation) {
+        getReport().addRuleViolation(ruleViolation);
+        getRuleViolationFixer().addRuleViolation(ruleViolation);
+    }
+
+    public void addRuleViolationFix(final RuleViolationAutoFixer ruleViolationFix,
+                                    final Node node) {
+        getRuleViolationFixer().addRuleViolationFix(ruleViolationFix, node);
+    }
+
+    public void applyRuleViolationFixes() {
+        getRuleViolationFixer().applyRuleViolationFixes();
     }
 }

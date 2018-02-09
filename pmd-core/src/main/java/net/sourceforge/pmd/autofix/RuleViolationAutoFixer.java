@@ -4,9 +4,6 @@
 
 package net.sourceforge.pmd.autofix;
 
-import net.sourceforge.pmd.RuleViolation;
-
 public interface RuleViolationAutoFixer {
-    void apply();
-    RuleViolation getRuleViolation();
+    void apply(RewritableNode node);
 }

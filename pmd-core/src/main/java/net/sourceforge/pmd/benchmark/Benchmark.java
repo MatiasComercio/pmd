@@ -24,6 +24,7 @@ public enum Benchmark {
     RuleChainTotal(12, "Rule chain rule total"),
     MeasuredTotal(13, "Measured total"),
     NonMeasuredTotal(14, "Non-measured total"),
+    RuleViolationFix(15, "Rule Violation Fix"),
     TotalPMD(16, "Total PMD");
 
     public final int index;

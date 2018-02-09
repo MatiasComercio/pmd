@@ -65,6 +65,7 @@ public class RuleChain {
         RuleChainVisitor visitor = getRuleChainVisitor(language);
         if (visitor != null) {
             visitor.visitAll(nodes, ctx);
+            ctx.applyRuleViolationFixes();
         }
     }
 
