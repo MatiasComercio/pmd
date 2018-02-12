@@ -19,7 +19,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import net.sourceforge.pmd.autofix.RewritableNode;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
@@ -462,16 +461,6 @@ public abstract class AbstractNode implements RewritableNode {
         if (parent != null && parent instanceof RewritableNode) {
             ((RewritableNode) parent).removeChild(jjtGetChildIndex());
         }
-    }
-
-    @Override
-    public boolean haveChildrenChanged() {
-        return ast.hasRewriteEvents(this);
-    }
-
-    @Override
-    public RewriteEvent[] getChildrenRewriteEvents() {
-        return ast.getRewriteEvents(this);
     }
 
     private void internalReplaceChild(final Node oldChild, final Node child, final int index) {

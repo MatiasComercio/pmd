@@ -285,17 +285,4 @@ public interface Node {
     // xnow: update documentation
     void setChild(Node newChild, int index);
     // xnow: should we move this to the RewritableNode interface? I think so, so as to not have breaking API changes
-
-    // xnow: All these methods MUST be moved to the RewritableNode interface
-    /**
-     *
-     * @return {@code true} if any of this node's children have been modified; {@code false} otherwise
-     */
-    boolean haveChildrenChanged();
-
-    /**
-     *
-     * @return A copy of all the {@link RewriteEvent}s that occurred over this node's children (may be null).
-     */
-    RewriteEvent[] getChildrenRewriteEvents();
 }

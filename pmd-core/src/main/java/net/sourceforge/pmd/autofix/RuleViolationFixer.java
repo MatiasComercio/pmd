@@ -17,14 +17,14 @@ public class RuleViolationFixer {
     // xnow
     private static class RuleViolationFixData {
         private final RuleViolation ruleViolation;
-        private final RuleViolationAutoFixer ruleViolationAutoFix;
+        private final RuleViolationAutoFixer ruleViolationFix;
         private RewritableNode rewritableNode;
 
         private RuleViolationFixData(final RuleViolation pRuleViolation,
                                      final RuleViolationAutoFixer pRuleViolationAutoFixer,
                                      final RewritableNode pNode) {
             this.ruleViolation = pRuleViolation;
-            this.ruleViolationAutoFix = pRuleViolationAutoFixer;
+            this.ruleViolationFix = pRuleViolationAutoFixer;
             this.rewritableNode = pNode;
         }
 
@@ -77,7 +77,7 @@ public class RuleViolationFixer {
         final RewritableNode violationNode = ruleViolationFixData.consumeNode();
         final AST ast = violationNode.getAST();
         ast.preFix(ruleViolation); // This will lead us to link a RewriteEvent with the RuleViolation that generated it
-        ruleViolationFixData.ruleViolationAutoFix.apply(violationNode);
+        ruleViolationFixData.ruleViolationFix.apply(violationNode);
         ast.postFix(ruleViolation); // This will unset the current rule violation context being fixed
     }
 }

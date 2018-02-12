@@ -41,7 +41,7 @@ public class RewriteEventsRecorderImplTest {
 
     @Before
     public void initializeRewriteEventsRecorder() {
-        rewriteEventsRecorder = new RewriteEventsRecorderImpl();
+        rewriteEventsRecorder = new RewriteEventsRecorder();
     }
 
     // -----------------** Single Rewrite Events Test Cases **----------------- //

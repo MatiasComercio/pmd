@@ -8,6 +8,7 @@ import net.sourceforge.pmd.lang.ast.AST;
 import net.sourceforge.pmd.lang.ast.Node;
 
 // xnow: document
+// xnow: think: COULD IT BE ASTNode? :smile: more similar to Eclipse namespace even
 public interface RewritableNode extends Node {
     /**
      * Remove the current node from its parent, if any.
