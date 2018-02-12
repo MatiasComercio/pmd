@@ -15,8 +15,8 @@ import net.sourceforge.pmd.RuleViolation;
 public interface AST {
     void preInsertChild(Node child, int index);
     void postInsertChild(Node child, int index);
-    void preSetChild(Node child, int index);
-    void postSetChild(Node child, int index);
+    void preReplaceChild(Node child, int index);
+    void postReplaceChild(Node child, int index);
     void preRemoveChild(int index);
     void postRemoveChild(int index);
 

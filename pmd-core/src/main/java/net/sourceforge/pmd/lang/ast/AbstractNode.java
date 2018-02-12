@@ -20,8 +20,6 @@ import org.w3c.dom.Element;
 
 import net.sourceforge.pmd.autofix.RewritableNode;
 import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorder;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventsRecorderImpl;
 import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
@@ -42,12 +40,10 @@ public abstract class AbstractNode implements RewritableNode {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private RewriteEventsRecorder rewriteEventsRecorder;
     private AST ast; // xnow: TODO somewhere (idea: visitor right before RuleSets.apply execution)
 
     public AbstractNode(int id) {
         this.id = id;
-        this.rewriteEventsRecorder = new RewriteEventsRecorderImpl();
     }
 
     public AbstractNode(int id, int theBeginLine, int theEndLine, int theBeginColumn, int theEndColumn) {
@@ -418,6 +414,48 @@ public abstract class AbstractNode implements RewritableNode {
         this.lastToken = token;
     }
 
+    // xnow: RewritableNode interface implementations
+
+    @Override
+    public void insertChild(final Node newChild, final int index) {
+        preInsertChild(newChild, index);
+        internalInsertChild(newChild, index);
+        postInsertChild(newChild, index);
+    }
+
+
+    /**
+     * Set the given newChild at the given index.
+     * - If index < 0, IllegalArgumentException is thrown
+     * - Else, if index >= jjtGetNumChildren, the children array is extended so as to perform the insertion.
+     * - Else, the newChild at the given index, if any, is detached form this parent and replaced by the given newChild.
+     * @param newChild The newChild to be set.
+     * @param index The position where to set the given newChild.
+     * @throws IllegalArgumentException If the index is negative.
+     */
+    @Override // xnow: review comments & update documentation
+    public void setChild(final Node newChild, final int index) {
+        if (children == null || index >= children.length) {
+            // It is an insert as it is impossible that there may be any old child node at the given index
+            insertChild(newChild, index);
+        } else {
+            replaceChild(newChild, index);
+        }
+    }
+
+    private void replaceChild(final Node newChild, final int index) {
+        final Node oldChild = preReplaceChild(newChild, index);
+        internalReplaceChild(oldChild, newChild, index);
+        postReplaceChild(oldChild, newChild, index);
+    }
+
+    @Override
+    public void removeChild(final int index) {
+        final Node oldChild = preRemoveChild(index);
+        internalRemoveChild(oldChild, index);
+        postRemoveChild(oldChild, index);
+    }
+
     @Override
     public void remove() {
         // Detach current node of its parent, if any
@@ -427,51 +465,16 @@ public abstract class AbstractNode implements RewritableNode {
     }
 
     @Override
-    public void removeChild(final int index) {
-        if (0 > index || index >= jjtGetNumChildren()) {
-            return;
-        }
-
-        // Null child may have been caused due to an invalid insertion/addition
-        final Node oldChild = Objects.requireNonNull(children[index]);
-
-        // Remove the child at the given index
-        children = ArrayUtils.remove(children, index);
-        // Update the remaining & left-shifted children indexes
-        for (int i = childIndex; i < jjtGetNumChildren(); i++) {
-            jjtGetChild(i).jjtSetChildIndex(i);
-        }
-
-        // Detach old child node of its parent, if any
-        oldChild.jjtSetParent(null);
-
-        // Finally, report the remove event
-        removeChildEvent(this, oldChild, index);
+    public boolean haveChildrenChanged() {
+        return ast.hasRewriteEvents(this);
     }
 
-    /**
-     * Set the given child at the given index.
-     * - If index < 0, IllegalArgumentException is thrown
-     * - Else, if index >= jjtGetNumChildren, the children array is extended so as to perform the insertion.
-     * - Else, the child at the given index, if any, is detached form this parent and replaced by the given child.
-     * @param child The child to be set.
-     * @param index The position where to set the given child.
-     * @throws IllegalArgumentException If the index is negative.
-     */
-    @Override // TODO: review comments
-    public void setChild(final Node child, final int index) { // (partial insert) & replace
-        Node oldChild = null;
-        if (index < 0) {
-            throw new IllegalArgumentException("index should be non-negative");
-        } else if (children == null) { // insert, for sure
-            children = new Node[index + 1];
-        } else if (index >= children.length) { // insert, for sure
-            Node[] newChildren = new Node[index + 1];
-            System.arraycopy(children, 0, newChildren, 0, children.length);
-            children = newChildren;
-        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
-            oldChild = children[index];
-        }
+    @Override
+    public RewriteEvent[] getChildrenRewriteEvents() {
+        return ast.getRewriteEvents(this);
+    }
+
+    private void internalReplaceChild(final Node oldChild, final Node child, final int index) {
         children[index] = child;
         child.jjtSetChildIndex(index);
         // Attach new child node to its parent
@@ -480,30 +483,15 @@ public abstract class AbstractNode implements RewritableNode {
         if (oldChild != null) {
             oldChild.jjtSetParent(null);
         }
-        // Finally, report the replace event
-        // replaceChildEvent(this, oldChild, newChild, index); // TODO [autofix]
     }
 
-    @Override
-    public int insertChild(final Node newChild, final int index) {
-        Objects.requireNonNull(newChild);
-        if (index < 0) {
-            return index;
-        }
-        final int numChildren = jjtGetNumChildren();
-        final int insertionIndex = index <= numChildren ? index : numChildren;
-        // Ensure that the given index position is empty
-        makeSpaceForNewChild(insertionIndex);
-        // Once shifted, the given index is empty. Let's add it as a new child
-        children[insertionIndex] = newChild;
-        newChild.jjtSetChildIndex(insertionIndex);
+    private void internalInsertChild(final Node newChild, final int index) {
+        children[index] = newChild;
+        newChild.jjtSetChildIndex(index);
         newChild.jjtSetParent(this);
-        // Finally, report the insert event
-        insertChildEvent(this, newChild, insertionIndex); // TODO [autofix]
-        return insertionIndex;
     }
 
-    private void makeSpaceForNewChild(final int index) {
+    private void makeSpaceToInsertChild(final int index) {
         if (children == null) {
             children = new Node[index + 1];
             return; // The children's array is already empty, so there is space for the new child
@@ -515,7 +503,7 @@ public abstract class AbstractNode implements RewritableNode {
         }
 
         // If there is already a child in this index, let's shift them all to the right
-        Node[] newChildren = new Node[children.length + 1];
+        Node[] newChildren = new Node[children.length + 1]; // xnow: this should be the index or sth of that sort (look the commented code below)
         System.arraycopy(children, 0, newChildren, 0, index);
         System.arraycopy(children, index, newChildren, index + 1, children.length - index);
         children = newChildren;
@@ -525,26 +513,78 @@ public abstract class AbstractNode implements RewritableNode {
         }
     }
 
-    private void removeChildEvent(final Node parentNode, final Node oldChildNode, final int childIndex) {
-        rewriteEventsRecorder.recordRemove(parentNode, oldChildNode, childIndex);
+    /*
+        if (children == null) { // insert, for sure
+            children = new Node[index + 1];
+        } else if (index >= children.length) { // insert, for sure
+            Node[] newChildren = new Node[index + 1];
+            System.arraycopy(children, 0, newChildren, 0, children.length);
+            children = newChildren;
+        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
+            oldChild = children[index];
+        }
+     */
+
+    private void internalRemoveChild(final Node oldChild, final int index) {
+        // Remove the child at the given index
+        children = ArrayUtils.remove(children, index);
+        // Update the remaining & left-shifted children indexes
+        for (int i = childIndex; i < jjtGetNumChildren(); i++) {
+            jjtGetChild(i).jjtSetChildIndex(i);
+        }
+
+        // Detach old child node of its parent, if any
+        oldChild.jjtSetParent(null);
     }
 
-    private void insertChildEvent(final Node parentNode, final Node newChildNode, final int childIndex) {
-        rewriteEventsRecorder.recordInsert(parentNode, newChildNode, childIndex);
+    private void validateNewChild(final Node newChild, final int index) {
+        Objects.requireNonNull(newChild);
+        validateNonNegative(index);
     }
 
-    private void replaceChildEvent(final Node parentNode, final Node oldChildNode,
-                                   final Node newChildNode, final int childIndex) {
-        rewriteEventsRecorder.recordReplace(parentNode, oldChildNode, newChildNode, childIndex);
+    private void validateNonNegative(final int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("index cannot be negative");
+        }
     }
 
-    @Override
-    public boolean haveChildrenChanged() {
-        return rewriteEventsRecorder.hasRewriteEvents();
+    private void validateRemoveChild(final int index) {
+        if (0 > index || index >= jjtGetNumChildren()) {
+            throw new IllegalArgumentException("index should be <= 0 and < jjtGetNumChildren()");
+        }
     }
 
-    @Override
-    public RewriteEvent[] getChildrenRewriteEvents() {
-        return rewriteEventsRecorder.getRewriteEvents();
+    private void preInsertChild(final Node newChild, final int index) {
+        validateNewChild(newChild, index);
+        this.ast.preInsertChild(this, newChild, index);
+        makeSpaceToInsertChild(index); // Ensure that the given index position is empty
+    }
+
+    private void postInsertChild(final Node newChild, final int index) {
+        this.ast.postInsertChild(this, newChild, index);
+    }
+
+    private Node preReplaceChild(final Node newChild, final int index) {
+        validateNewChild(newChild, index);
+        // Null child may have been caused due to an invalid insertion
+        final Node oldChild = children[index];
+        this.ast.preReplaceChild(this, oldChild, newChild, index);
+        return oldChild;
+    }
+
+    private void postReplaceChild(final Node oldChild, final Node newChild, final int index) {
+        this.ast.postReplaceChild(this, oldChild, newChild, index);
+    }
+
+    private Node preRemoveChild(final int index) {
+        validateRemoveChild(index);
+        // Null child may have been caused due to an invalid insertion
+        final Node oldChild = Objects.requireNonNull(children[index]);
+        this.ast.preRemoveChild(this, oldChild, index);
+        return oldChild;
+    }
+
+    private void postRemoveChild(final Node oldChild, final int index) {
+        this.ast.postRemoveChild(this, oldChild, index);
     }
 }

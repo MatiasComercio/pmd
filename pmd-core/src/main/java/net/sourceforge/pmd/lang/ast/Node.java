@@ -282,8 +282,11 @@ public interface Node {
      * @param index The position where to replace the current child with the new one
      * @throws NullPointerException if {@code newChild} is null
      */
-    void setChild(Node newChild, int index); // TODO: update documentation
+    // xnow: update documentation
+    void setChild(Node newChild, int index);
+    // xnow: should we move this to the RewritableNode interface? I think so, so as to not have breaking API changes
 
+    // xnow: All these methods MUST be moved to the RewritableNode interface
     /**
      *
      * @return {@code true} if any of this node's children have been modified; {@code false} otherwise
