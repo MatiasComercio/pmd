@@ -84,7 +84,7 @@ public class RewriteEventsRecorderImplTest {
         recorder.record(rewriteEventsRecorder);
         // Event should have been correctly recorded
         assertTrue(rewriteEventsRecorder.hasRewriteEvents());
-        assertEquals(expectedRewriteEvent, rewriteEventsRecorder.getRewriteEvents()[rewriteEventIndex]);
+        assertEquals(expectedRewriteEvent, rewriteEventsRecorder.getRewriteRecordPerNode()[rewriteEventIndex]);
     }
 
     // -----------------* Invalid cases *----------------- //
@@ -187,11 +187,11 @@ public class RewriteEventsRecorderImplTest {
         // Record the original event
         originalEventRecorder.record(rewriteEventsRecorder);
         // Grab the original rewrite events
-        final RewriteEvent[] originalRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+        final RewriteEvent[] originalRewriteEvents = rewriteEventsRecorder.getRewriteRecordPerNode();
         // Record the new event
         newEventRecorder.record(rewriteEventsRecorder);
         // Grab the updated rewrite events
-        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteEvents();
+        final RewriteEvent[] updatedRewriteEvents = rewriteEventsRecorder.getRewriteRecordPerNode();
         // Validate state with the given expectation
         expectation.expect(originalRewriteEvents, updatedRewriteEvents, expectedNewRewriteEvent, rewriteEventIndex);
     }

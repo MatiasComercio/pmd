@@ -8,7 +8,6 @@ package net.sourceforge.pmd.lang.ast;
 import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory;
 import net.sourceforge.pmd.autofix.rewrite.RewriteEventsRecorder;
-import net.sourceforge.pmd.autofix.rewrite.RewriteRecordFactory;
 
 // xnow: implementing; UPDATE ALL DOCUMENTATION
 /**
@@ -18,6 +17,7 @@ import net.sourceforge.pmd.autofix.rewrite.RewriteRecordFactory;
 public class AST {
     private final RewriteEventsRecorder rewriteEventsRecorder;
 
+    // xnow: @param originatingRuleViolation The rule violation originating the rewrite event to be recorded.
     private RuleViolation ruleViolationBeingFixed;
 
     private AST() {
@@ -59,7 +59,7 @@ public class AST {
 
     public void postInsertChild(final Node parent, final Node newChild, final int index) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(RewriteRecordFactory.INSTANCE.newInsertRecord(parent, newChild, index, ruleViolationBeingFixed));
+            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newInsertEvent(ruleViolationBeingFixed, newChild));
         }
     }
 
@@ -69,7 +69,7 @@ public class AST {
 
     public void postReplaceChild(final Node parent, final Node oldChild, final Node newChild, final int index) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(RewriteRecordFactory.INSTANCE.newReplaceRecord(parent, oldChild, newChild, index, ruleViolationBeingFixed));
+            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newReplaceEvent(ruleViolationBeingFixed, oldChild, newChild));
         }
     }
 
@@ -79,7 +79,7 @@ public class AST {
 
     public void postRemoveChild(final Node parent, final Node oldChild, final int index) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(RewriteRecordFactory.INSTANCE.newRemoveRecord(parent, oldChild, index, ruleViolationBeingFixed));
+            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newRemoveEvent(ruleViolationBeingFixed, oldChild));
         }
 
     }
