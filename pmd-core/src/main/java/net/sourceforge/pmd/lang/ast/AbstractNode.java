@@ -497,33 +497,25 @@ public abstract class AbstractNode implements RewritableNode {
             return; // The children's array is already empty, so there is space for the new child
         }
 
-        // If there is no child in this index, there is space for the new child
-        if (index < children.length && children[index] == null) {
-            return;
+        // Let's shift all children to the right
+        Node[] newChildren = new Node[index + 1]; // Create the new children array with the minimum needed capacity
+        // Copy all children that will not be right-shifted
+        final int numOfNotShiftedChildren = index < children.length ? index : children.length;
+        System.arraycopy(children, 0, newChildren, 0, numOfNotShiftedChildren);
+
+        // Right-shift all missing children from index on
+        for (int i = index; i < children.length - index; i++) {
+            final Node child = children[i];
+            if (child == null) {
+                continue;
+            }
+            final int newIndex = i + 1;
+            child.jjtSetChildIndex(newIndex);
+            newChildren[newIndex] = child;
         }
 
-        // If there is already a child in this index, let's shift them all to the right
-        Node[] newChildren = new Node[children.length + 1]; // xnow: this should be the index or sth of that sort (look the commented code below)
-        System.arraycopy(children, 0, newChildren, 0, index);
-        System.arraycopy(children, index, newChildren, index + 1, children.length - index);
         children = newChildren;
-        // Update indexes & right-shifted children indexes
-        for (int i = index + 1; i < jjtGetNumChildren(); i++) {
-            jjtGetChild(i).jjtSetChildIndex(i);
-        }
     }
-
-    /*
-        if (children == null) { // insert, for sure
-            children = new Node[index + 1];
-        } else if (index >= children.length) { // insert, for sure
-            Node[] newChildren = new Node[index + 1];
-            System.arraycopy(children, 0, newChildren, 0, children.length);
-            children = newChildren;
-        } else { // it must be a replace; so, the problem is that we cannot insert a new child in the middle of other two
-            oldChild = children[index];
-        }
-     */
 
     private void internalRemoveChild(final Node oldChild, final int index) {
         // Remove the child at the given index
