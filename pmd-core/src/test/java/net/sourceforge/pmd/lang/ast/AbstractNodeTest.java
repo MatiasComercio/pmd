@@ -13,8 +13,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory;
+import net.sourceforge.pmd.autofix.rewrite.RewriteEvent;
+import net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;

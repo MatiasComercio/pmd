@@ -10,7 +10,6 @@ import java.util.List;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 
-import net.sourceforge.pmd.autofix.rewriteevents.RewriteEvent;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
 
 /**

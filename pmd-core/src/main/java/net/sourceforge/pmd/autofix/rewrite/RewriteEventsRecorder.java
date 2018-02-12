@@ -2,21 +2,16 @@
  * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
  */
 
-package net.sourceforge.pmd.autofix.rewriteevents;
+package net.sourceforge.pmd.autofix.rewrite;
 
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newInsertRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newRemoveRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newReplaceRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.INSERT;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REMOVE;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventType.REPLACE;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.INSERT;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.REMOVE;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.REPLACE;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.lang.ast.Node;
 
 /**
@@ -32,66 +27,12 @@ import net.sourceforge.pmd.lang.ast.Node;
  * independently of how many times it has been modified.
  * </p>
  */
-public class RewriteEventsRecorder {
+public class RewriteEventsRecorder { // xaf: perhaps updating this to `RewriteRecorder`
     /**
      * All rewrite events hold by this instance. The rewrite event for a given index corresponds to the modification
      * that the child node at that position suffered.
      */
     private RewriteEvent[] rewriteEvents;
-
-    /**
-     * Record an insert operation over the given {@code parent} node.
-     *
-     * @param parent   The node on which a new child is being inserted.
-     * @param newChild The child node being inserted.
-     * @param index   The index where the new child node is being inserted.
-     * @param originatingRuleViolation The rule violation originating the rewrite event to be recorded. // xnow: add to the rewrite event creation
-     */
-    public void recordInsert(final Node parent, final Node newChild, final int index,
-                             final RuleViolation originatingRuleViolation) {
-        Objects.requireNonNull(parent);
-        Objects.requireNonNull(newChild);
-        validateNonNullIndex(index);
-
-        recordRewriteEvent(RewriteEventFactory.newInsertRewriteEvent(parent, newChild, index));
-    }
-
-    /**
-     * Record a replace operation over the given {@code parent} node.
-     *
-     * @param node   The node whose child is being replaced.
-     * @param oldChild The child node being replaced.
-     * @param newChild The new child node that will replace the {@code oldChild} node.
-     * @param index   The index of the child node being replaced.
-     * @param originatingRuleViolation The rule violation originating the rewrite event to be recorded. // xnow: add to the rewrite event creation
-     */
-    public void recordReplace(final Node node, final Node oldChild,
-                              final Node newChild, final int index,
-                              final RuleViolation originatingRuleViolation) {
-        Objects.requireNonNull(node);
-        Objects.requireNonNull(oldChild);
-        Objects.requireNonNull(newChild);
-        validateNonNullIndex(index);
-
-        recordRewriteEvent(RewriteEventFactory.newReplaceRewriteEvent(node, oldChild, newChild, index));
-    }
-
-    /**
-     * Record a remove operation over the given {@code parent} node.
-     *
-     * @param parent   The node whose child is being removed.
-     * @param oldChild The child node being removed.
-     * @param index   The index of the child node being removed.
-     * @param originatingRuleViolation The rule violation originating the rewrite event to be recorded. // xnow: add to the rewrite event creation
-     */
-    public void recordRemove(final Node parent, final Node oldChild, final int index,
-                             final RuleViolation originatingRuleViolation) {
-        Objects.requireNonNull(parent);
-        Objects.requireNonNull(oldChild);
-        validateNonNullIndex(index);
-
-        recordRewriteEvent(RewriteEventFactory.newRemoveRewriteEvent(parent, oldChild, index));
-    }
 
     /**
      * @return {@code true} if this instance holds any rewrite event; {@code false} otherwise.
@@ -110,14 +51,9 @@ public class RewriteEventsRecorder {
         return Arrays.copyOf(rewriteEvents, rewriteEvents.length);
     }
 
-    private void validateNonNullIndex(final int index) {
-        if (index < 0) {
-            throw new IllegalArgumentException(String.format("index <%d> is lower than 0", index));
-        }
-    }
-
-    private void recordRewriteEvent(final RewriteEvent rewriteEvent) {
-        final int childIndex = rewriteEvent.getChildNodeIndex();
+    // xnow: document
+    public void record(final RewriteRecord rewriteRecord) {
+        final int childIndex = rewriteRecord.getChildNodeIndex();
         if (rewriteEvents == null) {
             rewriteEvents = new RewriteEvent[childIndex + 1];
         } else if (childIndex >= rewriteEvents.length) {
@@ -128,11 +64,11 @@ public class RewriteEventsRecorder {
 
         final RewriteEvent oldRewriteEvent = rewriteEvents[childIndex];
         if (oldRewriteEvent == null) { // This is the first event for this child index
-            rewriteEvents[childIndex] = rewriteEvent;
+            rewriteEvents[childIndex] = rewriteRecord;
         } else {
             // There is a previous event for the given index => we have to merge the old node event
             //  with the new one before recording the given event
-            rewriteEvents = recordMergedRewriteEvents(rewriteEvents, childIndex, oldRewriteEvent, rewriteEvent);
+            rewriteEvents = recordMergedRewriteEvents(rewriteEvents, childIndex, oldRewriteEvent, rewriteRecord);
         }
     }
 

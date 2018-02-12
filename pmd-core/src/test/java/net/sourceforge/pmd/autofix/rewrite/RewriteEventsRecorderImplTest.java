@@ -2,11 +2,11 @@
  * BSD-style license; for more info see http://pmd.sourceforge.net/license.html
  */
 
-package net.sourceforge.pmd.autofix.rewriteevents;
+package net.sourceforge.pmd.autofix.rewrite;
 
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newInsertRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newRemoveRewriteEvent;
-import static net.sourceforge.pmd.autofix.rewriteevents.RewriteEventFactory.newReplaceRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory.newInsertRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory.newRemoveRewriteEvent;
+import static net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory.newReplaceRewriteEvent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
