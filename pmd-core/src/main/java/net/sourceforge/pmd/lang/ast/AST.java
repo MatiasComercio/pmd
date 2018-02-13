@@ -33,6 +33,7 @@ public class AST {
         ruleViolationBeingFixed = ruleViolation;
     }
 
+    // xaf: unused parameter here is left for symmetry purpose
     public void postFix(final RuleViolation ruleViolation) {
         ruleViolationBeingFixed = null;
     }
@@ -53,33 +54,33 @@ public class AST {
         Currently, this is not a possibility, but it may happen in a near future, or depending on future call contexts.
      */
 
-    public void preInsertChild(final Node parent, final Node newChild, final int index) {
+    public void preInsertChild(final Node parent, final Node newChild) {
         // Nothing for now
     }
 
-    public void postInsertChild(final Node parent, final Node newChild, final int index) {
+    public void postInsertChild(final Node parent, final Node newChild) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newInsertEvent(ruleViolationBeingFixed, newChild));
+            rewriteEventsRecorder.record(parent, RewriteEventFactory.INSTANCE.newInsertEvent(ruleViolationBeingFixed, newChild));
         }
     }
 
-    public void preReplaceChild(final Node parent, final Node oldChild, final Node newChild, final int index) {
+    public void preReplaceChild(final Node parent, final Node oldChild, final Node newChild) {
         // Nothing for now
     }
 
-    public void postReplaceChild(final Node parent, final Node oldChild, final Node newChild, final int index) {
+    public void postReplaceChild(final Node parent, final Node oldChild, final Node newChild) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newReplaceEvent(ruleViolationBeingFixed, oldChild, newChild));
+            rewriteEventsRecorder.record(parent, RewriteEventFactory.INSTANCE.newReplaceEvent(ruleViolationBeingFixed, oldChild, newChild));
         }
     }
 
-    public void preRemoveChild(final Node parent, final Node oldChild, final int index) {
+    public void preRemoveChild(final Node parent, final Node oldChild) {
         // Nothing for now
     }
 
-    public void postRemoveChild(final Node parent, final Node oldChild, final int index) {
+    public void postRemoveChild(final Node parent, final Node oldChild) {
         if (shouldRewriteEventsBeRecorded()) {
-            rewriteEventsRecorder.record(parent, index, RewriteEventFactory.INSTANCE.newRemoveEvent(ruleViolationBeingFixed, oldChild));
+            rewriteEventsRecorder.record(parent, RewriteEventFactory.INSTANCE.newRemoveEvent(ruleViolationBeingFixed, oldChild));
         }
 
     }

@@ -4,17 +4,14 @@
 
 package net.sourceforge.pmd.autofix.rewrite;
 
-import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.INSERT;
-import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.REMOVE;
-import static net.sourceforge.pmd.autofix.rewrite.RewriteEventType.REPLACE;
-
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-
-import org.apache.commons.lang3.ArrayUtils;
+import java.util.Set;
 
 import net.sourceforge.pmd.lang.ast.Node;
 
+// xaf: update documentation
 /**
  * <p>Record {@link net.sourceforge.pmd.autofix.RewritableNode}'s modifications as {@link RewriteEvent}s.</p>
  * <p>
@@ -33,205 +30,56 @@ public class RewriteEventsRecorder { // xaf: perhaps updating this to `RewriteRe
      * All rewrite events hold by this instance, cataloged by parent node.
      * The rewrite event for a given index corresponds to the modification the child node at that position suffered.
      */
-    private Map<Node, RewriteEvent[]> rewriteEventsPerNode;
+    private final Map<Node, RewriteRecords> rewriteRecordsPerParentNode;
 
     public RewriteEventsRecorder() {
-        this.rewriteEventsPerNode = new HashMap<>();
+        this.rewriteRecordsPerParentNode = new HashMap<>();
     }
 
-    // xnow: document
-    public void record(final Node parentNode, final int rewriteIndex, final RewriteEvent rewriteEvent) {
-        RewriteEvent[] rewriteEvents = rewriteEventsPerNode.get(parentNode);
-        if (rewriteEvents == null) {
-            rewriteEvents = new RewriteEvent[rewriteIndex + 1];
-            rewriteEventsPerNode.put(parentNode, rewriteEvents);
-        } else if (rewriteIndex >= rewriteEvents.length) {
-            final RewriteEvent[] newRewriteEvents = new RewriteEvent[rewriteIndex + 1];
-            System.arraycopy(rewriteEvents, 0, newRewriteEvents, 0, rewriteEvents.length);
-            rewriteEvents = newRewriteEvents;
-            rewriteEventsPerNode.put(parentNode, rewriteEvents);
+    public void record(final Node parentNode, final RewriteEvent rewriteEvent) {
+        RewriteRecords rewriteRecords = rewriteRecordsPerParentNode.get(parentNode);
+        if (rewriteRecords == null) {
+            rewriteRecords = new RewriteRecords();
+            rewriteRecordsPerParentNode.put(parentNode, rewriteRecords);
         }
-
-        final RewriteEvent oldRewriteEvent = rewriteEvents[rewriteIndex];
-        if (oldRewriteEvent == null) { // This is the first event for this child index
-            rewriteEvents[rewriteIndex] = rewriteEvent;
-        } else {
-            // There is a previous event for the given index => we have to merge the old node event
-            //  with the new one before recording the given event
-            rewriteEvents = recordMergedRewriteEvents(rewriteEvents, rewriteIndex, oldRewriteEvent, rewriteEvent);
-        }
+        rewriteRecords.record(rewriteEvent);
     }
 
-    private RewriteEvent[] recordMergedRewriteEvents(final RewriteEvent[] pRewriteEvents, final int childIndex,
-                                                     final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-        final RewriteEventsMerger rewriteEventsMerger = RewriteEventsMergers.getRewriteEventsMerger(oldRewriteEvent, newRewriteEvent);
-        return rewriteEventsMerger.recordMerge(pRewriteEvents, childIndex, oldRewriteEvent, newRewriteEvent);
-    }
+    private static class RewriteRecords {
+        private final Map<Node, RewriteEvent> mergeableRewriteEvents;
+        private final Set<RewriteEvent> nonMergeableRewriteEvents;
 
-    /**
-     * Interface that describe the main method to record a merge of two rewrite events.
-     */
-    private interface RewriteEventsMerger {
-        /**
-         * <p>
-         * Record a rewrite event at the given {@code rewriteEventIndex} on the given {@code rewriteEventsPerNode} array.
-         * </p>
-         * <p>
-         * This rewrite event is the result of merging the {@code oldRewriteEvent} with the {@code newRewriteEvent}.
-         * The merging policy may vary depending on the type of rewrite event that each of them (old an new)
-         * represent.
-         * </p>
-         * <p>
-         * Interface's implementations are in charge of carrying out the correct merge policy in each case.
-         * </p>
-         * <p>
-         * <strong>The original {@code rewriteEventsPerNode} array is not modified</strong>; instead, a new updated copy
-         * of the given array is returned.
-         * </p>
-         *
-         * @param rewriteEvents     The rewrite events where to record the merged rewrite event.
-         * @param rewriteEventIndex The index where to record the merged rewrite event
-         * @param oldRewriteEvent   The old rewrite event to be merged with the new one.
-         * @param newRewriteEvent   The new rewrite event to be merged with the old one.
-         * @return An updated copy of the given {@code rewriteEventsPerNode}.
-         */
-        RewriteEvent[] recordMerge(RewriteEvent[] rewriteEvents, int rewriteEventIndex, RewriteEvent oldRewriteEvent, RewriteEvent newRewriteEvent);
-    }
-
-    /**
-     * <p>
-     * Class implementing all the different merging policies based on the type of {@code oldRewriteEvent}
-     * and {@code newRewriteEvent}.
-     * </p>
-     * <p>
-     * Each merging policy should be obtained with the method {@code getRewriteEventsMerger},
-     * and not directly accessed.
-     * </p>
-     */
-    private abstract static class RewriteEventsMergers {
-        private static final RewriteEventsMerger INSERT_NEW_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                return ArrayUtils.insert(rewriteEventIndex, rewriteEvents, newRewriteEvent);
-            }
-        };
-
-        private static final RewriteEventsMerger REMOVE_ORIGINAL_REWRITE_EVENT_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                return ArrayUtils.remove(rewriteEvents, rewriteEventIndex);
-            }
-        };
-
-        private static final RewriteEventsMerger INSERT_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = newInsertRewriteEvent(newRewriteEvent.getParentNode(), newRewriteEvent.getNewChildNode(), rewriteEventIndex);
-                rewriteEvents[rewriteEventIndex] = mergedRewriteEvent;
-                return rewriteEvents;
-            }
-        };
-
-        private static final RewriteEventsMerger REPLACE_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = newReplaceRewriteEvent(newRewriteEvent.getParentNode(), oldRewriteEvent.getOldChildNode(), newRewriteEvent.getNewChildNode(), rewriteEventIndex);
-                rewriteEvents[rewriteEventIndex] = mergedRewriteEvent;
-                return rewriteEvents;
-            }
-        };
-
-        private static final RewriteEventsMerger REMOVE_REWRITE_EVENTS_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                final RewriteEvent mergedRewriteEvent = newRemoveRewriteEvent(newRewriteEvent.getParentNode(), oldRewriteEvent.getOldChildNode(), rewriteEventIndex);
-                rewriteEvents[rewriteEventIndex] = mergedRewriteEvent;
-                return rewriteEvents;
-            }
-        };
-
-        private static final RewriteEventsMerger INVALID_MERGER = new RewriteEventsMerger() {
-            @Override
-            public RewriteEvent[] recordMerge(final RewriteEvent[] rewriteEvents, final int rewriteEventIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-                validate(rewriteEventIndex, oldRewriteEvent, newRewriteEvent);
-                final String msg = String.format("Cannot merge events: <%s> -> <%s>", oldRewriteEvent.getRewriteEventType(), newRewriteEvent.getRewriteEventType());
-                throw new IllegalStateException(msg);
-            }
-        };
-
-        private static final int INSERT_I = 0;
-        private static final int REPLACE_I = 1;
-        private static final int REMOVE_I = 2;
-        private static final Map<Class<? extends RewriteEvent>, Integer> EVENT_TO_INDEX_MAPPER;
-        private static final RewriteEventsMerger[][] REWRITE_EVENTS_MERGERS;
-
-        static {
-            EVENT_TO_INDEX_MAPPER = new HashMap<>();
-            EVENT_TO_INDEX_MAPPER.put(InsertEvent.class, INSERT_I);
-            EVENT_TO_INDEX_MAPPER.put(ReplaceEvent.class, REPLACE_I);
-            EVENT_TO_INDEX_MAPPER.put(RemoveEvent.class, REMOVE_I);
-
-
-            final int size = RewriteEventType.values().length;
-            REWRITE_EVENTS_MERGERS = new RewriteEventsMerger[size][size];
-            final int iInsert = INSERT_I;
-            final int iReplace = REPLACE_I;
-            final int iRemove = REMOVE_I;
-
-            // Insert -> Insert = both Inserts are kept
-            REWRITE_EVENTS_MERGERS[iInsert][iInsert] = INSERT_NEW_REWRITE_EVENT_MERGER;
-
-            // Insert -> Replace = Insert, with the newRewriteEvent of the Replace event
-            REWRITE_EVENTS_MERGERS[iInsert][iReplace] = INSERT_REWRITE_EVENTS_MERGER;
-
-            // Insert -> Remove = remove the original Insert event
-            REWRITE_EVENTS_MERGERS[iInsert][iRemove] = REMOVE_ORIGINAL_REWRITE_EVENT_MERGER;
-
-            // Replace -> Insert = Replace & Insert are kept
-            REWRITE_EVENTS_MERGERS[iReplace][iInsert] = INSERT_NEW_REWRITE_EVENT_MERGER;
-
-            // Replace -> Replace = Replace, with the oldRewriteEvent of the original Replace and the newRewriteEvent of the new Replace
-            REWRITE_EVENTS_MERGERS[iReplace][iReplace] = REPLACE_REWRITE_EVENTS_MERGER;
-
-            // Replace -> Remove = Remove, with the oldRewriteEvent of the original Replace
-            REWRITE_EVENTS_MERGERS[iReplace][iRemove] = REMOVE_REWRITE_EVENTS_MERGER;
-
-            // Remove -> Insert = Replace, with the oldRewriteEvent of the Remove and the newRewriteEvent of the Insert
-            REWRITE_EVENTS_MERGERS[iRemove][iInsert] = REPLACE_REWRITE_EVENTS_MERGER;
-
-            // Cannot replace or remove an already removed node
-            REWRITE_EVENTS_MERGERS[iRemove][iReplace] = INVALID_MERGER;
-            REWRITE_EVENTS_MERGERS[iRemove][iRemove] = INVALID_MERGER;
+        private RewriteRecords() {
+            mergeableRewriteEvents = new HashMap<>();
+            nonMergeableRewriteEvents = new HashSet<>();
         }
 
-        /**
-         * @param oldEventType The old event type.
-         * @param newEventType The new event type.
-         * @return The rewrite events merger that implements the correct merging policy for the given
-         * {@code oldEventType} and {@code newEventType}.
-         */
-        private static RewriteEventsMerger getRewriteEventsMerger(final RewriteEvent oldEvent, final RewriteEvent newEvent) {
-            return REWRITE_EVENTS_MERGERS[mapToIndex(oldEvent)][mapToIndex(newEvent)];
-        }
+        public void record(final RewriteEvent rewriteEvent) {
+            // Merge this rewrite event with a compatible & existing one, if possible.
+            // `compatible` means that oldRewriteEvent.newChildNode == newRewriteEvent.oldChildNode,
+            //  as defined by the `RewriteEvent#mergeWith(RewriteEvent)` method documentation.
+            final RewriteEvent newRewriteEvent;
+            final Node searchMergeNode = rewriteEvent.getOldChildNode();
+            if (searchMergeNode == null) {
+                newRewriteEvent = rewriteEvent;
+            } else {
+                final RewriteEvent oldRewriteEvent = mergeableRewriteEvents.remove(searchMergeNode);
+                newRewriteEvent = oldRewriteEvent == null ? rewriteEvent : oldRewriteEvent.mergeWith(rewriteEvent);
+                // Recall that if the merge is performed, then a null return value means that
+                //  oldRewriteEvent and rewriteEvent cancelled themselves.
+            }
 
-        private static int mapToIndex(final RewriteEvent event) {
-            return EVENT_TO_INDEX_MAPPER.get(event.getClass());
-        }
+            if (newRewriteEvent == null) {
+                return; // The record should not be performed
+            }
 
-        private static void validate(final int childIndex, final RewriteEvent oldRewriteEvent, final RewriteEvent newRewriteEvent) {
-            final Node oldEventNewChild = oldRewriteEvent.getNewChildNode();
-            final Node newEventOldChild = newRewriteEvent.getOldChildNode();
-            if (newEventOldChild != null && !newEventOldChild.equals(oldEventNewChild)) {
-                throw new IllegalArgumentException("oldChildNode of the new record event should be "
-                    + "the same as the newChildNode of the old record event in order to "
-                    + "be able to merge these events");
+            // A rewrite event is mergeable if it may be linked/merged with a newer rewrite event
+            final Node keyMergeNode = newRewriteEvent.getNewChildNode();
+            if (keyMergeNode == null) {
+                nonMergeableRewriteEvents.add(rewriteEvent);
+            } else {
+                mergeableRewriteEvents.put(keyMergeNode, rewriteEvent);
             }
         }
     }
-
 }

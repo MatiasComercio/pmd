@@ -11,15 +11,16 @@ import net.sourceforge.pmd.lang.ast.Node;
 public enum RewriteEventFactory {
     INSTANCE;
 
-    public InsertEvent newInsertEvent(final RuleViolation originatingRuleViolation, final Node newChild) {
-        return new InsertEvent(originatingRuleViolation, newChild);
+    public RewriteEvent newInsertEvent(final RuleViolation originatingRuleViolation, final Node newChildNode) {
+        return RewriteEvent.newBuilder(originatingRuleViolation).newChildNode(newChildNode).build();
     }
 
-    public ReplaceEvent newReplaceEvent(final RuleViolation originatingRuleViolation, final Node oldChild, final Node newChild) {
-        return new ReplaceEvent(originatingRuleViolation, oldChild, newChild);
+    public RewriteEvent newReplaceEvent(final RuleViolation originatingRuleViolation,
+                                        final Node oldChildNode, final Node newChildNode) {
+        return RewriteEvent.newBuilder(originatingRuleViolation).oldChildNode(oldChildNode).newChildNode(newChildNode).build();
     }
 
-    public RemoveEvent newRemoveEvent(final RuleViolation originatingRuleViolation, final Node oldChild) {
-        return new RemoveEvent(originatingRuleViolation, oldChild);
+    public RewriteEvent newRemoveEvent(final RuleViolation originatingRuleViolation, final Node oldChildNode) {
+        return RewriteEvent.newBuilder(originatingRuleViolation).oldChildNode(oldChildNode).build();
     }
 }

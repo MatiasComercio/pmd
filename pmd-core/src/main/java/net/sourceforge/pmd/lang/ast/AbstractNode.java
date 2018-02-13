@@ -535,37 +535,38 @@ public abstract class AbstractNode implements RewritableNode {
         }
     }
 
+    // xaf: unused `index` parameter in these pre/post methods are left for symmetry purpose
     private void preInsertChild(final Node newChild, final int index) {
         validateNewChild(newChild, index);
-        this.ast.preInsertChild(this, newChild, index);
+        this.ast.preInsertChild(this, newChild);
         makeSpaceToInsertChild(index); // Ensure that the given index position is empty
     }
 
     private void postInsertChild(final Node newChild, final int index) {
-        this.ast.postInsertChild(this, newChild, index);
+        this.ast.postInsertChild(this, newChild);
     }
 
     private Node preReplaceChild(final Node newChild, final int index) {
         validateNewChild(newChild, index);
         // Null child may have been caused due to an invalid insertion
         final Node oldChild = children[index];
-        this.ast.preReplaceChild(this, oldChild, newChild, index);
+        this.ast.preReplaceChild(this, oldChild, newChild);
         return oldChild;
     }
 
     private void postReplaceChild(final Node oldChild, final Node newChild, final int index) {
-        this.ast.postReplaceChild(this, oldChild, newChild, index);
+        this.ast.postReplaceChild(this, oldChild, newChild);
     }
 
     private Node preRemoveChild(final int index) {
         validateRemoveChild(index);
         // Null child may have been caused due to an invalid insertion
         final Node oldChild = Objects.requireNonNull(children[index]);
-        this.ast.preRemoveChild(this, oldChild, index);
+        this.ast.preRemoveChild(this, oldChild);
         return oldChild;
     }
 
     private void postRemoveChild(final Node oldChild, final int index) {
-        this.ast.postRemoveChild(this, oldChild, index);
+        this.ast.postRemoveChild(this, oldChild);
     }
 }
