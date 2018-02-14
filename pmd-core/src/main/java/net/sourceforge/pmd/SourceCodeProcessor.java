@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 
+import net.sourceforge.pmd.autofix.RewritableNode;
 import net.sourceforge.pmd.benchmark.Benchmark;
 import net.sourceforge.pmd.benchmark.Benchmarker;
 import net.sourceforge.pmd.lang.Language;
@@ -18,6 +19,7 @@ import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.LanguageVersionHandler;
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.VisitorStarter;
+import net.sourceforge.pmd.lang.ast.AST;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.ast.ParseException;
 import net.sourceforge.pmd.lang.xpath.Initializer;
@@ -171,6 +173,7 @@ public class SourceCodeProcessor {
         Parser parser = PMD.parserFor(languageVersion, configuration);
 
         Node rootNode = parse(ctx, sourceCode, parser);
+        astPopulation(rootNode);
         symbolFacade(rootNode, languageVersionHandler);
         Language language = languageVersion.getLanguage();
         usesDFA(languageVersion, rootNode, ruleSets, language);
@@ -179,6 +182,25 @@ public class SourceCodeProcessor {
 
         List<Node> acus = Collections.singletonList(rootNode);
         ruleSets.apply(acus, ctx, language);
+    }
+
+    /*
+     * xaf, xhelp
+     * For now, AST implementation is generic and there is no need to do it language-specific.
+     * If the need arises, then the `symbolFacade` method approach may be used.
+     * In fact, it may be possible to avoid visiting all the tree again by performing this assignment into an
+     * existing visitation or even during parse of the source code (e.g., in java, introduce the ast instance
+     * into the Java.jjt file so the generated JavaParser initializes all JavaNodes with the same AST while they
+     * are being first recognized; I think this is the best approach, but is something we need to discuss
+     * with @jsotuyod
+     */
+    private void astPopulation(final Node rootNode) {
+        if (!(rootNode instanceof RewritableNode)) {
+            return;
+        }
+        // xaf: this is done in this way because it's a cheap solution.
+        // When the above questions get answered, this implementation may be changed
+        ((RewritableNode) rootNode).setAST(new AST());
     }
 
     private void determineLanguage(RuleContext ctx) {

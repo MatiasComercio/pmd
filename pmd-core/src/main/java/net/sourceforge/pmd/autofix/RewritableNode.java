@@ -7,8 +7,8 @@ package net.sourceforge.pmd.autofix;
 import net.sourceforge.pmd.lang.ast.AST;
 import net.sourceforge.pmd.lang.ast.Node;
 
-// xnow: document
-// xnow: think: COULD IT BE ASTNode? :smile: more similar to Eclipse namespace even
+// xaf: document
+// xaf: think: COULD IT BE ASTNode? :smile: more similar to Eclipse namespace even
 public interface RewritableNode extends Node {
     /**
      * Remove the current node from its parent, if any.
@@ -35,5 +35,10 @@ public interface RewritableNode extends Node {
      */
     void insertChild(Node newChild, int index);
 
-    AST getAST(); // xnow: document
+    // xaf: document
+    AST getAST();
+
+    // xaf: document
+    // set this ast recursively for the current node and all its descendants
+    void setAST(AST ast);
 }

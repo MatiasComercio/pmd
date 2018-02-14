@@ -9,7 +9,7 @@ import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.autofix.rewrite.RewriteEventFactory;
 import net.sourceforge.pmd.autofix.rewrite.RewriteEventsRecorder;
 
-// xnow: implementing; UPDATE ALL DOCUMENTATION
+// xaf: UPDATE ALL DOCUMENTATION
 /**
  * Classes implementing this interface should be in charge
  * of managing the context of all the nodes of the current AST.
@@ -17,10 +17,10 @@ import net.sourceforge.pmd.autofix.rewrite.RewriteEventsRecorder;
 public class AST {
     private final RewriteEventsRecorder rewriteEventsRecorder;
 
-    // xnow: @param originatingRuleViolation The rule violation originating the rewrite event to be recorded.
+    // xaf: @param originatingRuleViolation The rule violation originating the rewrite event to be recorded.
     private RuleViolation ruleViolationBeingFixed;
 
-    private AST() {
+    public AST() {
         this.rewriteEventsRecorder = new RewriteEventsRecorder();
     }
 
@@ -39,15 +39,7 @@ public class AST {
     }
 
     /*
-        xnow: IDEAS
-        - Can do the validation on the pre*Methods (the ones present at the rewrite events recorder)
-            - These validations are being carried out by the `AbstractNode` implementation, so there is no need to double check that
-        - Can generate the rewrite event directly here, and only call the recordRewriteEvent on the RewriteEventsRecorder: that makes MUCH more sense
-            in terms of legibility and coherence among classes, and also makes it worth enough to have a pre&post for each rewrite events, fully validating all prior conditions
-            and generating the actual events in the post actions.
-     */
-    /*
-        xnow: as this class is for internal usage only, all post call must have it equal pre call, but this is not validated;
+        xaf: document: as this class is for internal usage only, all post call must have it equal pre call, but this is not validated;
         it is (INTERNAL) user responsibility only.
         Other possibility would be to create the rewrite event in the pre and then in the post record it,
         but this may need a synchronization in case of multiple calls to the pre method before a post is called.

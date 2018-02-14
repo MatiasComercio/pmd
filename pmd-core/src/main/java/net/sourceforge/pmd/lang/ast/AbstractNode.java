@@ -39,7 +39,7 @@ public abstract class AbstractNode implements RewritableNode {
     private Object userData;
     private GenericToken firstToken;
     private GenericToken lastToken;
-    private AST ast; // xnow: TODO somewhere (idea: visitor right before RuleSets.apply execution)
+    private AST ast; // xhelp, xaf: should set when rewriteOperation occurs or when the node is created
 
     public AbstractNode(int id) {
         this.id = id;
@@ -413,7 +413,7 @@ public abstract class AbstractNode implements RewritableNode {
         this.lastToken = token;
     }
 
-    // xnow: RewritableNode interface implementations
+    // xaf: RewritableNode interface implementations
 
     @Override
     public void insertChild(final Node newChild, final int index) {
@@ -432,7 +432,7 @@ public abstract class AbstractNode implements RewritableNode {
      * @param index The position where to set the given newChild.
      * @throws IllegalArgumentException If the index is negative.
      */
-    @Override // xnow: review comments & update documentation
+    @Override // xaf: update documentation
     public void setChild(final Node newChild, final int index) {
         if (children == null || index >= children.length) {
             // It is an insert as it is impossible that there may be any old child node at the given index
@@ -460,6 +460,25 @@ public abstract class AbstractNode implements RewritableNode {
         // Detach current node of its parent, if any
         if (parent != null && parent instanceof RewritableNode) {
             ((RewritableNode) parent).removeChild(jjtGetChildIndex());
+        }
+    }
+
+    @Override
+    public AST getAST() {
+        return ast;
+    }
+
+    @Override
+    public void setAST(final AST theAst) {
+        if (this.ast != null && !this.ast.equals(theAst)) {
+            throw new IllegalStateException("Trying to set a different AST to a node that it already has one assigned");
+        }
+        this.ast = theAst;
+        for (int i = 0; i < jjtGetNumChildren(); i++) {
+            final Node child = children[i];
+            if (child != null && child instanceof RewritableNode) {
+                ((RewritableNode) child).setAST(theAst);
+            }
         }
     }
 
