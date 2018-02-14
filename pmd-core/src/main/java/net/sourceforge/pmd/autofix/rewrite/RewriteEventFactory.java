@@ -7,7 +7,7 @@ package net.sourceforge.pmd.autofix.rewrite;
 import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.lang.ast.Node;
 
-//xnow: document
+//xaf: document
 public enum RewriteEventFactory {
     INSTANCE;
 

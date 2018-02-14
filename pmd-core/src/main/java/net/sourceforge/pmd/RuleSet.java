@@ -503,7 +503,6 @@ public class RuleSet implements ChecksumAware {
                     long end = System.nanoTime();
                     Benchmarker.mark(Benchmark.Rule, rule.getName(), end - start, 1);
                     start = end;
-                    // xnow
                     ctx.applyRuleViolationFixes();
                 }
             } catch (RuntimeException e) {

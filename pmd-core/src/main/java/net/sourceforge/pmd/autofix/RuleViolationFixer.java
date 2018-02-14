@@ -14,7 +14,6 @@ import net.sourceforge.pmd.lang.ast.AST;
 import net.sourceforge.pmd.lang.ast.Node;
 
 public class RuleViolationFixer {
-    // xnow
     private static class RuleViolationFixData {
         private final RuleViolation ruleViolation;
         private final RuleViolationAutoFixer ruleViolationFix;
@@ -56,16 +55,16 @@ public class RuleViolationFixer {
     }
 
     public void applyRuleViolationFixes() {
-        // xnow: TODO: add debug logging
+        // xaf: TODO: add debug logging
         long start = System.currentTimeMillis();
         long end;
         while (!ruleViolationFixesData.isEmpty()) {
             final RuleViolationFixData ruleViolationFixData = ruleViolationFixesData.poll();
-            // xnow: TODO: in a future, it will be possible to call a custom fixRuleViolation per language, perhaps
+            // xaf: TODO: in a future, it will be possible to call a custom fixRuleViolation per language, perhaps
             //  to correctly set the context of changes (scopes, type references, and so on)
             fixRuleViolation(ruleViolationFixData);
             end = System.nanoTime();
-            // xnow: implement proper ruleViolationFixData.toString
+            // xaf: implement proper ruleViolationFixData.toString
             Benchmarker.mark(Benchmark.RuleViolationFix, ruleViolationFixData.toString(), end - start, 1);
             start = end;
         }

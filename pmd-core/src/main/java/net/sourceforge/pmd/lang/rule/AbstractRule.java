@@ -346,7 +346,7 @@ public abstract class AbstractRule extends AbstractPropertySource implements Rul
                 this, node, this.getMessage(), null);
     }
 
-    // xnow: just done here, but have to replicate this in all the other `addViolation*` methods
+    // xaf: just done here, but have to replicate this in all the other `addViolation*` methods
     public void addViolation(Object data, Node node, RuleViolationAutoFixer ruleViolationFix) {
         addViolation(data, node);
         final RuleContext ruleContext = (RuleContext) data;

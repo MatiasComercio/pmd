@@ -245,7 +245,7 @@ public class RuleContext {
         return ruleViolationFixer;
     }
 
-    // xnow
+    // xaf: document
     public void addRuleViolation(final RuleViolation ruleViolation) {
         getReport().addRuleViolation(ruleViolation);
         getRuleViolationFixer().addRuleViolation(ruleViolation);

@@ -281,7 +281,7 @@ public interface Node {
      * @param index The position where to replace the current child with the new one
      * @throws NullPointerException if {@code newChild} is null
      */
-    // xnow: update documentation
+    // xaf: update documentation
     void setChild(Node newChild, int index);
-    // xnow: should we move this to the RewritableNode interface? I think so, so as to not have breaking API changes
+    // xaf: should we move this to the RewritableNode interface? I think so, so as to not have breaking API changes
 }

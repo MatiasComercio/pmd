@@ -798,7 +798,7 @@ public class ForLoopCanBeForeachRule extends AbstractJavaRule {
          * that for the entire node region.
          */
 
-        // xnow primitive version: this may be largely improved as explained above
+        // xaf primitive version: this may be largely improved as explained above
         private String stringify(final ASTTypeArgument typeArgument) {
             final StringBuilder sb = new StringBuilder();
             if (typeArgument.isNew()) {

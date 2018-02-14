@@ -18,7 +18,7 @@ import net.sourceforge.pmd.lang.ast.Node;
  * All {@link RewriteEvent}s to be recorded SHOULD be linked to the {@code RuleViolation}
  * they are fixing in order to determine what had caused the modification to happen.
  * </p>
- * <p>This class is not able to record rewrite events for different nodes, so each node may hold its own instance.</p> // xnow: HAVE TO FIX THIS
+ * <p>This class is not able to record rewrite events for different nodes, so each node may hold its own instance.</p>
  * <p>
  * Rewrite events occurring on the same index are merged straight away, so at all moment only one rewrite event
  * is hold for a given index. This helps to understand exactly what kind of change has the node suffer,

@@ -29,7 +29,7 @@ public abstract class AbstractRuleViolationFactory implements RuleViolationFacto
         }
     }
 
-    @Override // xnow: TODO: should update the documentation so as not to reveal implementation behavior
+    @Override // xaf: TODO: should update the documentation so as not to reveal implementation behavior
     // There is no report among the given parameters; it can be said that the created violation is properly linked to
     //  the given ruleContext and the implementation is the only aware of defining properly for each case.
     public void addViolation(RuleContext ruleContext, Rule rule, Node node, String message, Object[] args) {
@@ -37,7 +37,7 @@ public abstract class AbstractRuleViolationFactory implements RuleViolationFacto
         String formattedMessage = cleanup(message, args);
         // and internally, assign it to the report & to the ruleViolationFixer
         ruleContext.addRuleViolation(createRuleViolation(rule, ruleContext, node, formattedMessage));
-        // xnow: TODO: have to do the same for the below method
+        // xaf: TODO: have to do the same for the below method
     }
 
     @Override
