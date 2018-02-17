@@ -138,7 +138,8 @@ public interface Node {
 
     /**
      * Traverses up the tree to find all of the parent instances of type
-     * parentType or one of its subclasses.
+     * parentType or one of its subclasses. The nodes are ordered
+     * deepest-first.
      *
      * @param parentType Class literal of the type you want to find
      * @param <T>        The type you want to find
@@ -284,4 +285,11 @@ public interface Node {
     // xaf: update documentation
     void setChild(Node newChild, int index);
     // xaf: should we move this to the RewritableNode interface? I think so, so as to not have breaking API changes
+
+    /**
+     * Gets the name of the node that is used to match it with XPath queries.
+     *
+     * @return The XPath node name
+     */
+    String getXPathNodeName();
 }

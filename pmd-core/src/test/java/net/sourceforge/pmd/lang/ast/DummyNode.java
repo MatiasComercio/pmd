@@ -17,4 +17,9 @@ public class DummyNode extends AbstractNode {
     public String toString() {
         return "dummyNode";
     }
+
+    @Override
+    public String getXPathNodeName() {
+        return "dummyNode";
+    }
 }

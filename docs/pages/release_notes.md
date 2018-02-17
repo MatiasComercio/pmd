@@ -4,11 +4,11 @@ permalink: pmd_release_notes.html
 keywords: changelog, release notes
 ---
 
-## ????? - 6.0.1-SNAPSHOT
+## ????? - 6.1.0-SNAPSHOT
 
-The PMD team is pleased to announce PMD 6.0.1-SNAPSHOT.
+The PMD team is pleased to announce PMD 6.1.0.
 
-This is a bug fixing release.
+This is a minor release.
 
 ### Table Of Contents
 
@@ -19,55 +19,46 @@ This is a bug fixing release.
 
 ### New and noteworthy
 
-#### Additional information about the new introduced rule categories
-
-With the release of PMD 6.0.0, all rules have been sorted into one of the following eight categories:
-
-1.  **Best Practices**: These are rules which enforce generally accepted best practices.
-2.  **Code Style**: These rules enforce a specific coding style.
-3.  **Design**: Rules that help you discover design issues.
-4.  **Documentation**: These rules are related to code documentation.
-5.  **Error Prone**: Rules to detect constructs that are either broken, extremely confusing or prone to runtime errors.
-6.  **Multithreading**: These are rules that flag issues when dealing with multiple threads of execution.
-7.  **Performance**: Rules that flag suboptimal code.
-8.  **Security**: Rules that flag potential security flaws.
-
-Please note, that not every category in every language may have a rule. There might be categories with no
-rules at all, such as `category/java/security.xml`, which has currently no rules.
-There are even languages, which only have rules of one category (e.g. `category/xml/errorprone.xml`).
-
-You can find the information about available rules in the generated rule documentation, available
-at <https://pmd.github.io/latest/>.
-
 ### Fixed Issues
 
 *   all
-    *   [#842](https://github.com/pmd/pmd/issues/842): \[core] Use correct java bootclasspath for compiling
-*   apex-errorprone
-    *   [#792](https://github.com/pmd/pmd/issues/792): \[apex] AvoidDirectAccessTriggerMap incorrectly detects array access in classes
-*   apex-security
-    *   [#788](https://github.com/pmd/pmd/issues/788): \[apex] Method chaining breaks ApexCRUDViolation
+    *   [#569](https://github.com/pmd/pmd/issues/569): \[core] XPath support requires specific toString implementations
+    *   [#848](https://github.com/pmd/pmd/issues/848): \[doc] Test failures when building pmd-doc under Windows
+    *   [#872](https://github.com/pmd/pmd/issues/872): \[core] NullPointerException at FileDataSource.glomName()
 *   doc
-    *   [#782](https://github.com/pmd/pmd/issues/782): \[doc] Wrong information in the Release Notes about the Security ruleset
-    *   [#794](https://github.com/pmd/pmd/issues/794): \[doc] Broken documentation links for 6.0.0
+    *   [#791](https://github.com/pmd/pmd/issues/791): \[doc] Documentation site reorganisation
 *   java
-    *   [#793](https://github.com/pmd/pmd/issues/793): \[java] Parser error with private method in nested classes in interfaces
-    *   [#812](https://github.com/pmd/pmd/issues/812): \[java] Exception applying rule DataClass
-    *   [#814](https://github.com/pmd/pmd/issues/814): \[java] UnsupportedClassVersionError is failure instead of a warning
-    *   [#831](https://github.com/pmd/pmd/issues/831): \[java] StackOverflow in JavaTypeDefinitionSimple.toString
-*   java-bestpractices
-    *   [#783](https://github.com/pmd/pmd/issues/783): \[java] GuardLogStatement regression
-    *   [#800](https://github.com/pmd/pmd/issues/800): \[java] ForLoopCanBeForeach NPE when looping on `this` object
-*   java-codestyle
-    *   [#817](https://github.com/pmd/pmd/issues/817): \[java] UnnecessaryModifierRule crashes on valid code
+    *   [#825](https://github.com/pmd/pmd/issues/825): \[java] Excessive\*Length ignores too much
+    *   [#888](https://github.com/pmd/pmd/issues/888): \[java] ParseException occurs with valid '<>' in Java 1.8 mode
 *   java-design
-    *   [#785](https://github.com/pmd/pmd/issues/785): \[java] NPE in DataClass rule
-*   java-performance
-    *   [#841](https://github.com/pmd/pmd/issues/841): \[java] InsufficientStringBufferDeclaration NumberFormatException
+    *   [#855](https://github.com/pmd/pmd/issues/855): \[java] ImmutableField false-positive with lambdas
+*   java-documentation
+    *   [#877](https://github.com/pmd/pmd/issues/877): \[java] CommentRequired valid rule configuration causes PMD error
+*   java-errorprone
+    *   [#885](https://github.com/pmd/pmd/issues/885): \[java] CompareObjectsWithEqualsRule trigger by enum1 != enum2
 
 ### API Changes
 
+#### Changes to the Node interface
+
+The method `getXPathNodeName` is added to the `Node` interface, which removes the
+use of the `toString` of a node to get its XPath element name (see [#569](https://github.com/pmd/pmd/issues/569)).
+A default implementation is provided in `AbstractNode`, to stay compatible
+with existing implementors.
+
+The `toString` method of a Node is not changed for the time being, and still produces
+the name of the XPath node. That behaviour may however change in future major releases,
+e.g. to produce a more useful message for debugging.
+
 ### External Contributions
 
-*   [#796](https://github.com/pmd/pmd/pull/796): \[apex] AvoidDirectAccessTriggerMap incorrectly detects array access in classes - [Robert Sösemann](https://github.com/up2go-rsoesemann)
-*   [#799](https://github.com/pmd/pmd/pull/799): \[apex] Method chaining breaks ApexCRUDViolation - [Robert Sösemann](https://github.com/up2go-rsoesemann)
+*   [#790](https://github.com/pmd/pmd/pull/790): \[java] Added some comments for JDK 9 - [Tobias Weimer](https://github.com/tweimer)
+*   [#803](https://github.com/pmd/pmd/pull/803): \[doc] Added SpotBugs as successor of FindBugs - [Tobias Weimer](https://github.com/tweimer)
+*   [#828](https://github.com/pmd/pmd/pull/828): \[core] Add operations to manipulate a document - [Gonzalo Ibars Ingman](https://github.com/gibarsin)
+*   [#830](https://github.com/pmd/pmd/pull/830): \[java] UseArraysAsList: Description added - [Tobias Weimer](https://github.com/tweimer)
+*   [#845](https://github.com/pmd/pmd/pull/845): \[java] Fix false negative PreserveStackTrace on string concatenation - [Alberto Fernández](https://github.com/albfernandez)
+*   [#868](https://github.com/pmd/pmd/pull/868): \[core] Improve XPath documentation && make small refactors - [Gonzalo Ibars Ingman](https://github.com/gibarsin)
+*   [#875](https://github.com/pmd/pmd/pull/875): \[core] Support shortnames when using filelist - [John Zhang](https://github.com/johnjiabinzhang)
+*   [#886](https://github.com/pmd/pmd/pull/886): \[java] Fix #885 - [Matias Comercio](https://github.com/MatiasComercio)
+*   [#900](https://github.com/pmd/pmd/pull/900): \[core] Use the isEmpty method instead of comparing the value of size() to 0 - [reudismam](https://github.com/reudismam)
+
