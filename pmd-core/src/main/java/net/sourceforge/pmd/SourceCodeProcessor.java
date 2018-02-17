@@ -4,16 +4,24 @@
 
 package net.sourceforge.pmd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
+import net.sourceforge.pmd.autofix.DocumentOperationsCollector;
+import net.sourceforge.pmd.autofix.DocumentOperationsCollectorFactory;
 import net.sourceforge.pmd.autofix.RewritableNode;
+import net.sourceforge.pmd.autofix.rewrite.RewriteEventTranslator;
 import net.sourceforge.pmd.benchmark.Benchmark;
 import net.sourceforge.pmd.benchmark.Benchmarker;
+import net.sourceforge.pmd.document.DocumentFile;
+import net.sourceforge.pmd.document.DocumentOperationsApplierForNonOverlappingRegions;
+import net.sourceforge.pmd.lang.AbstractLanguageVersionHandler;
 import net.sourceforge.pmd.lang.Language;
 import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.LanguageVersionHandler;
@@ -182,6 +190,39 @@ public class SourceCodeProcessor {
 
         List<Node> acus = Collections.singletonList(rootNode);
         ruleSets.apply(acus, ctx, language);
+        if (configuration.isAutoFix()) { // xnow
+            doAutoFix(languageVersionHandler, ctx.getSourceCodeFile(), rootNode);
+        } /* else {
+            Put these text operations as to be saved into the cache. See: PMD#processFiles
+        } */
+    }
+
+    // xnow
+    private void doAutoFix(final LanguageVersionHandler languageVersionHandler,
+                           final File sourceCodeFile,
+                           final Node rootNode) {
+        // xaf: for now, we are implementing the necessary method on the abstract language version handler
+        //  so we do not introduce any Breaking API Changes to the interface.
+        //  When PMD 7.0.0 is released, we should add that method to the interface and remove this cast
+        // xaf: we should tag the implemented methods as @Experimental or @Beta
+        if (!(languageVersionHandler instanceof AbstractLanguageVersionHandler)) {
+            return;
+        }
+
+        final AbstractLanguageVersionHandler abstractLanguageVersionHandler = (AbstractLanguageVersionHandler) languageVersionHandler;
+        final RewriteEventTranslator rewriteEventTranslator = abstractLanguageVersionHandler.getRewriteEventTranslator();
+        final DocumentOperationsCollector collector = DocumentOperationsCollectorFactory.INSTANCE.newCollector(rewriteEventTranslator);
+        try (DocumentFile documentFile = new DocumentFile(sourceCodeFile, StandardCharsets.UTF_8)) {
+            final DocumentOperationsApplierForNonOverlappingRegions applier = getApplier(documentFile);
+            collector.collect(applier, rootNode); // xnow: collect all saved rewrite events and transform/translate them into document operations
+            applier.apply(); // Apply all the document operations
+        } catch (final IOException e) {
+            // xnow: should add a log that the file could not be opened and that auto fixes won't be applied
+        }
+    }
+
+    private DocumentOperationsApplierForNonOverlappingRegions getApplier(final DocumentFile documentFile) {
+        return new DocumentOperationsApplierForNonOverlappingRegions(documentFile);
     }
 
     /*

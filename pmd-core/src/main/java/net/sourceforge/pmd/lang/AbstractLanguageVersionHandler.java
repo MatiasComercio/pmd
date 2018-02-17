@@ -6,6 +6,8 @@ package net.sourceforge.pmd.lang;
 
 import java.io.Writer;
 
+import net.sourceforge.pmd.autofix.NodeStringifier;
+import net.sourceforge.pmd.autofix.rewrite.RewriteEventTranslator;
 import net.sourceforge.pmd.lang.dfa.DFAGraphRule;
 
 /**
@@ -63,5 +65,9 @@ public abstract class AbstractLanguageVersionHandler implements LanguageVersionH
     @Override
     public DFAGraphRule getDFAGraphRule() {
         return null;
+    }
+
+    public RewriteEventTranslator getRewriteEventTranslator() {
+        return new RewriteEventTranslator(NodeStringifier.DUMMY);
     }
 }

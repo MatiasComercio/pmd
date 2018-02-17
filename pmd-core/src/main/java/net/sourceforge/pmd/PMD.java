@@ -314,7 +314,7 @@ public class PMD {
         }
 
         // Persist the analysis cache
-        configuration.getAnalysisCache().persist();
+        configuration.getAnalysisCache().persist(); //xaf: should add the rule violations fixes to be persisted
     }
 
     private static void sortFiles(final PMDConfiguration configuration, final List<DataSource> files) {
@@ -449,6 +449,7 @@ public class PMD {
 
         try {
             int violations = PMD.doPMD(configuration);
+            // xaf: should update validation count to be return: if fixes solve a violation, we should discount them from here
             if (violations > 0 && configuration.isFailOnViolation()) {
                 status = PMDCommandLineInterface.VIOLATIONS_FOUND;
             } else {
