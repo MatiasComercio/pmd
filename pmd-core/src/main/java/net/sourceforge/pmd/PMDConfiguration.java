@@ -94,6 +94,7 @@ public class PMDConfiguration extends AbstractConfiguration {
     private String inputUri;
     private String inputFilePath;
     private boolean ruleSetFactoryCompatibilityEnabled = true;
+    private boolean autoFix = false;
 
     // Reporting options
     private String reportFormat;
@@ -601,5 +602,22 @@ public class PMDConfiguration extends AbstractConfiguration {
         } else {
             setAnalysisCache(new FileAnalysisCache(new File(cacheLocation)));
         }
+    }
+
+    /**
+     * Whether PMD should apply the fixes (if any) for the detected rule violations.
+     * @return whether PMD should apply the fixes (if any) for the detected rule violations.
+     */
+    public boolean isAutoFix() {
+        return autoFix;
+    }
+
+    /**
+     * Set whether PMD should apply the fixes (if any) for the detected rule violations.
+     *
+     * @param isAutoFix isAutoFix
+     */
+    public void setAutoFix(final boolean isAutoFix) {
+        this.autoFix = isAutoFix;
     }
 }

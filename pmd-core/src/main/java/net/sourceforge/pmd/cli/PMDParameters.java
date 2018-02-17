@@ -165,6 +165,7 @@ public class PMDParameters {
         configuration.setThreads(params.getThreads());
         configuration.setFailOnViolation(params.isFailOnViolation());
         configuration.setAnalysisCacheLocation(params.cacheLocation);
+        configuration.setAutoFix(false); // xaf: Add the -autoFix flag on parameters :smile:
 
         LanguageVersion languageVersion = LanguageRegistry
                 .findLanguageVersionByTerseName(params.getLanguage() + " " + params.getVersion());

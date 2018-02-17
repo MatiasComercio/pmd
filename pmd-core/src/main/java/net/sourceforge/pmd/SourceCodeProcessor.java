@@ -190,9 +190,9 @@ public class SourceCodeProcessor {
 
         List<Node> acus = Collections.singletonList(rootNode);
         ruleSets.apply(acus, ctx, language);
-        if (configuration.isAutoFix()) { // xnow
+        if (configuration.isAutoFix()) {
             doAutoFix(languageVersionHandler, ctx.getSourceCodeFile(), rootNode);
-        } /* else {
+        } /* else { // xaf
             Put these text operations as to be saved into the cache. See: PMD#processFiles
         } */
     }
