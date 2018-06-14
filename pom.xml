@@ -267,6 +267,8 @@ Additionally it includes CPD, the copy-paste-detector. CPD finds duplicated code
         <ant.version>1.10.1</ant.version>
         <javadoc.plugin.version>3.0.0-M1</javadoc.plugin.version>
         <antlr.version>4.7</antlr.version>
+        <org.slf4j.version>1.7.12</org.slf4j.version>
+        <ch.qos.logback.version>1.2.3</ch.qos.logback.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -830,11 +832,23 @@ Additionally it includes CPD, the copy-paste-detector. CPD finds duplicated code
                 <artifactId>commons-lang3</artifactId>
                 <version>3.7</version>
             </dependency>
+            <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.12</version>
+                <version>${org.slf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${ch.qos.logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${ch.qos.logback.version}</version>
+            </dependency>
+            <!-- \Logging -->
             <dependency>
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock</artifactId>
