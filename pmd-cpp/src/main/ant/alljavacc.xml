@@ -50,12 +50,32 @@ public class Token implements GenericToken, java.io.Serializable]]></replacevalu
 
         <!--Add implementation methods of GenericToken-->
         <replace file="${target}/net/sourceforge/pmd/lang/cpp/ast/Token.java">
+            <replacetoken>import net.sourceforge.pmd.lang.ast.GenericToken;</replacetoken>
+            <replacevalue><![CDATA[import net.sourceforge.pmd.lang.ast.GenericToken;
+import net.sourceforge.pmd.util.GenericTokens;]]>
+            </replacevalue>
+        </replace>
+
+        <replace file="${target}/net/sourceforge/pmd/lang/cpp/ast/Token.java">
             <replacetoken>public Token specialToken;</replacetoken>
             <replacevalue><![CDATA[public Token specialToken;
 
+  private GenericToken emptyToken;
+
   @Override
   public GenericToken getNext() {
-    return next;
+    return next == null ? emptyToken : next;
+  }
+
+  @Override
+  public void setNext(final GenericToken token) {
+    if (GenericTokens.isEmptyToken(token)) {
+        this.emptyToken = token;
+        this.next = null;
+    } else {
+        this.emptyToken = null;
+        this.next = Token.class.cast(token);
+    }
   }
 
   @Override
@@ -64,11 +84,21 @@ public class Token implements GenericToken, java.io.Serializable]]></replacevalu
   }
 
   @Override
+  public GenericToken getSpecialToken() {
+    return specialToken;
+  }
+
+  @Override
+  public void setSpecialToken(final GenericToken token) {
+    this.specialToken = Token.class.cast(token);
+  }
+
+  @Override
   public String getImage() {
     return image;
   }
 
-    @Override
+  @Override
   public int getBeginLine() {
     return beginLine;
   }
@@ -86,6 +116,11 @@ public class Token implements GenericToken, java.io.Serializable]]></replacevalu
   @Override
   public int getEndColumn() {
     return endColumn;
+  }
+
+  @Override
+  public boolean is(final int kind) {
+    return this.kind == kind;
   }
 
 ]]></replacevalue>
