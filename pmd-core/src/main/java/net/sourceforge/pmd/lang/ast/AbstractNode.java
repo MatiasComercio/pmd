@@ -554,6 +554,11 @@ public abstract class AbstractNode implements Node {
             return;
         }
 
+        // First time scan if needed.
+        if (structure == null) {
+            structure = getNodeSyntax().scan(this); // FIXME: do sth to avoid unchecked call.
+        }
+
         // Mark me as needing sync.
         selfSyncRequired = true;
         // My added children may need sync too => mark to check to sync them too.
@@ -568,11 +573,6 @@ public abstract class AbstractNode implements Node {
             }
             aCurrAncestor.childrenSyncRequired = true;
             currAncestor = currAncestor.jjtGetParent();
-        }
-
-        // First time scan if needed.
-        if (structure == null) {
-            structure = getNodeSyntax().scan(this); // FIXME: do sth to avoid unchecked call.
         }
     }
 
