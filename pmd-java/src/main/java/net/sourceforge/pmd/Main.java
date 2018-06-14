@@ -10,7 +10,6 @@ import java.io.StringReader;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceBodyDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTFormalParameters;
 import net.sourceforge.pmd.lang.java.ast.ASTLambdaExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
@@ -22,6 +21,7 @@ import net.sourceforge.pmd.lang.java.ast.JavaParser;
 import net.sourceforge.pmd.lang.java.fixes.syntax.JavaNodesSyntax;
 import net.sourceforge.pmd.lang.syntax.NodeSyntax;
 
+// FIXME: remove this class as it is for fixes sample only
 public class Main {
     private static final String CLASS_OR_INTERFACE_BODY_DECLARATION = "static public abstract\n"
         + "    void\n"
@@ -34,11 +34,11 @@ public class Main {
 
     public static void main(String[] args) {
         testClassOrInterfaceBodyDeclaration();
-//        testLambda();
+        testLambda();
     }
 
     private static void testClassOrInterfaceBodyDeclaration() {
-        final CustomJavaParser<ASTClassOrInterfaceBodyDeclaration> parser = new CustomJavaParser<ASTClassOrInterfaceBodyDeclaration>(CLASS_OR_INTERFACE_BODY_DECLARATION);
+        final CustomJavaParser<ASTClassOrInterfaceBodyDeclaration> parser = new CustomJavaParser<>(CLASS_OR_INTERFACE_BODY_DECLARATION);
         parser.ClassOrInterfaceBodyDeclaration();
         final ASTClassOrInterfaceBodyDeclaration rootNode = parser.getNode();
         // Print the node's structure to easily search the indexes of the require nodes.
@@ -147,7 +147,9 @@ public class Main {
     }
 
     private static void testLambda() {
-        final ASTLambdaExpression lambdaExpression = new CustomJavaParser<ASTLambdaExpression>(LAMBDA).LambdaExpression();
+        final CustomJavaParser<ASTLambdaExpression> parser = new CustomJavaParser<>(LAMBDA);
+        parser.LambdaExpression();
+        final ASTLambdaExpression lambdaExpression = parser.getNode();
         final ASTVariableDeclaratorId firstVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(0);
         final ASTVariableDeclaratorId secondVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(1);
         final ASTVariableDeclaratorId thirdVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(2);
