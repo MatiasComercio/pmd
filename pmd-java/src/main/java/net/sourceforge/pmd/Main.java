@@ -38,18 +38,9 @@ public class Main {
     }
 
     private static void testClassOrInterfaceBodyDeclaration() {
-        final String s = "/**\n"
-            + " * BSD-style license; for more info see http://pmd.sourceforge.net/license.html\n"
-            + " */\n"
-            + "\n"
-            + "package samples;\n"
-            + "\n"
-            + "public abstract class JavaParserSample {\n"
-            + "    public abstract void sampleMethod(int i, boolean b,                       float f);\n"
-            + "}";
-        final ASTCompilationUnit cu = new JavaParser(new JavaCharStream(new StringReader(s))).CompilationUnit();
-        final ASTClassOrInterfaceBodyDeclaration rootNode = cu.getFirstDescendantOfType(ASTClassOrInterfaceBodyDeclaration.class);
-        // final ASTClassOrInterfaceBodyDeclaration rootNode = new CustomJavaParser<ASTClassOrInterfaceBodyDeclaration>(CLASS_OR_INTERFACE_BODY_DECLARATION).getNode();
+        final CustomJavaParser<ASTClassOrInterfaceBodyDeclaration> parser = new CustomJavaParser<ASTClassOrInterfaceBodyDeclaration>(CLASS_OR_INTERFACE_BODY_DECLARATION);
+        parser.ClassOrInterfaceBodyDeclaration();
+        final ASTClassOrInterfaceBodyDeclaration rootNode = parser.getNode();
         // Print the node's structure to easily search the indexes of the require nodes.
         rootNode.dump("> ");
         printSplitter();
@@ -156,7 +147,7 @@ public class Main {
     }
 
     private static void testLambda() {
-        final ASTLambdaExpression lambdaExpression = new CustomJavaParser<ASTLambdaExpression>(LAMBDA).getNode();
+        final ASTLambdaExpression lambdaExpression = new CustomJavaParser<ASTLambdaExpression>(LAMBDA).LambdaExpression();
         final ASTVariableDeclaratorId firstVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(0);
         final ASTVariableDeclaratorId secondVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(1);
         final ASTVariableDeclaratorId thirdVariableDeclaratorId = (ASTVariableDeclaratorId) lambdaExpression.jjtGetChild(2);
