@@ -13,6 +13,7 @@ import java.util.TreeSet;
 
 import net.sourceforge.pmd.lang.ast.GenericToken;
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.fixes.factory.TokenFactory;
 
 /**
  * This interface captures Java access modifiers.

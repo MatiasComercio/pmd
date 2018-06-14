@@ -230,4 +230,17 @@ public class ASTVariableDeclaratorId extends AbstractJavaTypeNode implements Dim
     public Class<?> getType() {
         return super.getType();
     }
+
+
+    // TODO: this methods may be added to a common interface for array containing classes.
+
+    public void incrementArrayDepth() {
+        arrayDepth++;
+    }
+
+    public void decrementArrayDepth() {
+        if (arrayDepth > 0) {
+            arrayDepth--;
+        }
+    }
 }
