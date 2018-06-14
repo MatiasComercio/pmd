@@ -352,4 +352,8 @@ public interface Node {
      * Remove the current node from its parent.
      */
     void remove();
+
+    // FIXME: these methods are for sample purpose only. May be removed.
+    void print();
+    void dump(String s);
 }

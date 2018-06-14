@@ -661,9 +661,28 @@ public abstract class AbstractNode implements Node {
         }
     }
 
+    @Override
     public void print() {
         syncIfRequired(); // FIXME: [think] add this sync check in all methods dealing with tokens.
         System.out.println(GenericTokens.stringify(firstToken, lastToken));
+    }
+
+    @Override
+    public void dump(String var1) {
+        System.out.println(this.toString(var1));
+        if (this.children != null) {
+            for (final Node aChildren : this.children) {
+                AbstractNode var3 = (AbstractNode) aChildren;
+                if (var3 != null) {
+                    var3.dump(var1 + " ");
+                }
+            }
+        }
+
+    }
+
+    public String toString(String var1) {
+        return var1 + this.toString();
     }
 
     private void syncIfRequired() {
