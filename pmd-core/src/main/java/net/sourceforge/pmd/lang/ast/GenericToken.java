@@ -8,12 +8,13 @@ package net.sourceforge.pmd.lang.ast;
  *  Represents a language-independent token such as constants, values language reserved keywords, or comments.
  */
 public interface GenericToken {
-
     /**
      * Obtain the next generic token according to the input stream which generated the instance of this token.
      * @return the next generic token if it exists; null if it does not exist
      */
     GenericToken getNext();
+
+    void setNext(GenericToken token);
 
     /**
      * Obtain a comment-type token which, according to the input stream which generated the instance of this token,
@@ -21,6 +22,10 @@ public interface GenericToken {
      * @return the comment-type token if it exists; null if it does not exist
      */
     GenericToken getPreviousComment();
+
+    GenericToken getSpecialToken();
+
+    void setSpecialToken(GenericToken token);
 
     /**
      * Gets the token's text.
@@ -51,4 +56,6 @@ public interface GenericToken {
      * @return a non-negative integer containing the begin column
      */
     int getEndColumn();
+
+    boolean is(int kind);
 }

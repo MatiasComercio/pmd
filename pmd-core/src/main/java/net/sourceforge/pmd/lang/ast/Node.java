@@ -304,11 +304,6 @@ public interface Node {
     void setUserData(Object userData);
 
     /**
-     * Remove the current node from its parent.
-     */
-    void remove();
-
-    /**
      * This method tells the node to remove the child node at the given index from the node's list of
      * children, if any; if not, no changes are done.
      *
@@ -334,4 +329,27 @@ public interface Node {
      */
     Iterator<Attribute> getXPathAttributesIterator();
 
+    // FIXME: These new `fix` methods may be added to a new intarface `FixableNode extends Node` to avoid Breaking API Changes.
+
+    // xdoc: all fix operations behave like Java List operations
+    // xdoc update: newChild needs to have all its tokens
+    // xdoc: @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index > jjtGetNumChildren())
+    // xdoc: @throws IllegalArgumentException if the new child is not a root node (i.e., it has another parent)
+    void addChild(int index, Node newChild);
+
+    // xdoc: append like (the other stuff is the same as the other addChild method).
+    void addChild(Node newChild);
+
+    // xdoc update: newChild needs to have all its tokens set
+    // xdoc: @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index >= jjtGetNumChildren())
+    // xdoc: @throws IllegalArgumentException if the new child is not a root node (i.e., it has another parent)
+    Node setChild(int index, Node newChild);
+
+    // xdoc: @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index >= jjtGetNumChildren())
+    Node removeChild(int index);
+
+    /**
+     * Remove the current node from its parent.
+     */
+    void remove();
 }

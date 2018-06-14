@@ -4,6 +4,8 @@
 
 package net.sourceforge.pmd.lang.ast;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +26,9 @@ import net.sourceforge.pmd.lang.ast.xpath.Attribute;
 import net.sourceforge.pmd.lang.ast.xpath.AttributeAxisIterator;
 import net.sourceforge.pmd.lang.ast.xpath.DocumentNavigator;
 import net.sourceforge.pmd.lang.dfa.DataFlowNode;
+import net.sourceforge.pmd.lang.syntax.NodeSyntax;
+import net.sourceforge.pmd.lang.syntax.structure.Structure;
+import net.sourceforge.pmd.util.GenericTokens;
 
 
 /**
@@ -48,6 +53,10 @@ public abstract class AbstractNode implements Node {
     private Object userData;
     protected GenericToken firstToken;
     protected GenericToken lastToken;
+
+    private boolean selfSyncRequired = false;
+    private boolean childrenSyncRequired = false;
+    private Structure structure;
 
     public AbstractNode(int id) {
         this.id = id;
@@ -88,15 +97,12 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public void jjtAddChild(Node child, int index) {
-        if (children == null) {
-            children = new Node[index + 1];
-        } else if (index >= children.length) {
-            Node[] newChildren = new Node[index + 1];
-            System.arraycopy(children, 0, newChildren, 0, children.length);
-            children = newChildren;
+        // No tokens update required as this method should be called only by JavaCC (parser).
+        if (children == null || index >= children.length) {
+            addChildNode(index, child);
+        } else {
+            setChildNode(index, child);
         }
-        children[index] = child;
-        child.jjtSetChildIndex(index);
     }
 
     @Override
@@ -462,18 +468,6 @@ public abstract class AbstractNode implements Node {
     }
 
     @Override
-    public void remove() {
-        // Detach current node of its parent, if any
-        final Node parent = jjtGetParent();
-        if (parent != null) {
-            parent.removeChildAtIndex(jjtGetChildIndex());
-            jjtSetParent(null);
-        }
-
-        // TODO [autofix]: Notify action for handling text edition
-    }
-
-    @Override
     public void removeChildAtIndex(final int childIndex) {
         if (0 <= childIndex && childIndex < jjtGetNumChildren()) {
             // Remove the child at the given index
@@ -521,5 +515,243 @@ public abstract class AbstractNode implements Node {
     @Override
     public Iterator<Attribute> getXPathAttributesIterator() {
         return new AttributeAxisIterator(this);
+    }
+
+    @Override
+    public void addChild(final Node newChild) {
+        addChild(jjtGetNumChildren(), newChild);
+    }
+
+    @Override
+    public void addChild(final int index, final Node newChild) {
+        validateIndex(index, jjtGetNumChildren());
+        validateNonNullRoot(newChild);
+        syncRequired();
+        addChildNode(index, newChild);
+    }
+
+    @Override
+    public Node setChild(final int index, final Node newChild) {
+        validateIndex(index, jjtGetNumChildren() - 1);
+        validateNonNullRoot(newChild);
+        syncRequired();
+        return setChildNode(index, newChild);
+    }
+
+    @Override
+    public Node removeChild(final int index) {
+        validateIndex(index, jjtGetNumChildren() - 1);
+        syncRequired();
+        return removeChildNode(index);
+    }
+
+    /*
+     * xaf: this should be public as AccessNode should inform/require sync on parents for modifiers.
+     *  See AbstractSimpleJavaAccessNode.setModifier.
+     */
+    public final void syncRequired() {
+        if (selfSyncRequired && childrenSyncRequired) {
+            return;
+        }
+
+        // Mark me as needing sync.
+        selfSyncRequired = true;
+        // My added children may need sync too => mark to check to sync them too.
+        childrenSyncRequired = true;
+
+        // Mark all my branch to inform that I need to be synced.
+        Node currAncestor = parent;
+        while (currAncestor != null) {
+            AbstractNode aCurrAncestor = requireAbstractNode(currAncestor);
+            if (aCurrAncestor.childrenSyncRequired) {
+                return;
+            }
+            aCurrAncestor.childrenSyncRequired = true;
+            currAncestor = currAncestor.jjtGetParent();
+        }
+
+        // First time scan if needed.
+        if (structure == null) {
+            structure = getNodeSyntax().scan(this); // FIXME: do sth to avoid unchecked call.
+        }
+    }
+
+    private void validateIndex(final int index, final int maxValidIndex) {
+        if (index < 0 || index > maxValidIndex) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    private void validateNonNullRoot(final Node newChild) {
+        if (newChild == null || newChild.jjtGetParent() != null) {
+            throw new IllegalArgumentException("New Child should be a non-null root node");
+        }
+    }
+
+    // xdoc: without tokens (all *ChildNode operations do not affect tokens).
+    // xdoc: no index validation as this method is internal; all validations should be performed previously.
+    private void addChildNode(final int index, final Node newChild) {
+        makeSpaceToInsertChild(index); // Ensure that the given index position is empty
+        children[index] = newChild;
+        newChild.jjtSetChildIndex(index);
+        newChild.jjtSetParent(this);
+    }
+
+    private void makeSpaceToInsertChild(final int index) {
+        if (children == null) {
+            children = new Node[index + 1];
+            return; // The children's array is already empty, so there is space for the new child
+        }
+
+        // Let's shift all children to the right
+        Node[] newChildren = new Node[Math.max(children.length, index) + 1]; // Create the new children array with the minimum needed capacity
+        // Copy all children that will not be right-shifted
+        final int numOfNotShiftedChildren = index < children.length ? index : children.length;
+        System.arraycopy(children, 0, newChildren, 0, numOfNotShiftedChildren);
+
+        // Right-shift all missing children from index on
+        for (int i = index; i < children.length; i++) {
+            final Node child = children[i];
+            if (child == null) {
+                continue;
+            }
+            final int newIndex = i + 1;
+            child.jjtSetChildIndex(newIndex);
+            newChildren[newIndex] = child;
+        }
+
+        children = newChildren;
+    }
+
+    private Node setChildNode(final int index, final Node newChild) {
+        // Null child may have been caused due to an invalid insertion
+        final Node oldChild = children[index];
+        children[index] = newChild;
+        newChild.jjtSetChildIndex(index);
+        // Attach new child node to its parent
+        newChild.jjtSetParent(this);
+        // Detach old child node, if any, of its parent
+        if (oldChild != null) {
+            oldChild.jjtSetParent(null);
+        }
+
+        return oldChild;
+    }
+
+    private Node removeChildNode(final int index) {
+        // Null child may have been caused due to an invalid insertion
+        final Node oldChild = requireNonNull(children[index]);
+        // Remove the child at the given index
+        children = ArrayUtils.remove(children, index);
+        // Update the remaining & left-shifted children indexes
+        for (int i = index; i < jjtGetNumChildren(); i++) {
+            jjtGetChild(i).jjtSetChildIndex(i);
+        }
+
+        // Detach old child node of its parent, if any
+        oldChild.jjtSetParent(null);
+        return oldChild;
+    }
+
+    @Override
+    public void remove() {
+        // Detach current node of its parent, if any
+        if (parent != null) {
+            parent.removeChild(jjtGetChildIndex());
+        }
+    }
+
+    public void print() {
+        syncIfRequired(); // FIXME: [think] add this sync check in all methods dealing with tokens.
+        System.out.println(GenericTokens.stringify(firstToken, lastToken));
+    }
+
+    private void syncIfRequired() {
+        if (childrenSyncRequired) {
+            if (children != null) {
+                for (Node child : children) {
+                    requireAbstractNode(child).syncIfRequired();
+                }
+                childrenSyncRequired = false;
+            }
+        }
+
+        if (selfSyncRequired) {
+            structure = getNodeSyntax().sync(this); // FIXME: do sth to avoid unchecked call.
+            selfSyncRequired = false;
+        }
+    }
+
+    // FIXME: move this logic of `getPrevToken` to a TokenManager structure.
+    public GenericToken getPrevToken() {
+        return getPrevToken(firstToken);
+    }
+
+    public GenericToken getPrevToken(final int aChildIndex) {
+        final AbstractNode aChild = requireAbstractNode(children[aChildIndex]); // TODO: validate index?
+        return getPrevToken(aChild.firstToken, aChild.childIndex);
+    }
+
+    public GenericToken getPrevToken(final AbstractNode anOldChild) {
+        return getPrevToken(anOldChild.firstToken, anOldChild.childIndex);
+    }
+
+    public GenericToken getPrevToken(final GenericToken token) {
+        return getPrevToken(token, -1);
+    }
+
+    /*
+     * FIXME: check how does this work when token is null.
+     * I think we should change getPrevToken(anOldChild) for getPrevToken(anyChild), and do sth like:
+     * ft = anyChild.ft
+     * ci = anyChild.ci
+     * return ft == null ? ci == 0 ? getPrevToken depending on the structure : this.getPrevToken(ci - 1) // FIXME: ximportant!!!
+     *                   : this.getPrevToken(ft, ci);
+     */
+    public GenericToken getPrevToken(final GenericToken token, final int tokensChildIndex) {
+        if (token == null) { // This is not a valid token of the tokens list.
+            return null;
+        }
+
+        GenericToken precedingToken;
+        if (tokensChildIndex > 0) {
+            final Node prevChild = children[tokensChildIndex - 1];
+            precedingToken = requireAbstractNode(prevChild).lastToken;
+        } else {
+            if (firstToken == token) {
+                // If entered here & I'm root => the given token is the first one of the token list.
+                precedingToken = parent == null ? null : requireAbstractNode(parent).getPrevToken(token, childIndex);
+            } else {
+                precedingToken = firstToken;
+            }
+        }
+
+        while (precedingToken != null && precedingToken.getNext() != token) {
+            precedingToken = precedingToken.getNext();
+        }
+
+        // return precedingToken;
+        // FIXME #2: uncomment the above line and remove the below lines after fixing #1.
+        return precedingToken != null ? precedingToken : parent == null ? null : requireAbstractNode(parent).getPrevToken(token, childIndex);
+    }
+
+    public AbstractNode requireAbstractNode(final Node node) {
+        if (!(node instanceof AbstractNode)) {
+            // FIXME: improve this. Maybe move jjt*Token methods to Node interface?
+            throw new IllegalStateException("Cannot build region as the given node does not implement token methods");
+        }
+        return (AbstractNode) node;
+    }
+
+    protected NodeSyntax getNodeSyntax() {
+        return null;
+    }
+
+    public Structure getStructure() {
+        return structure;
+    }
+
+    public void setStructure(final Structure structure) {
+        this.structure = structure;
     }
 }
