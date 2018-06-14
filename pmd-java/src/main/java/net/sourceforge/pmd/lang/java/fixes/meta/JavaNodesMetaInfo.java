@@ -11,15 +11,15 @@ import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
 import net.sourceforge.pmd.lang.java.ast.JavaParserTreeConstants;
 import net.sourceforge.pmd.lang.meta.NodesMetaInfo;
 
-public class SJNodesMetaInfo extends NodesMetaInfo<AbstractJavaNode> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SJNodesMetaInfo.class);
+public class JavaNodesMetaInfo extends NodesMetaInfo<AbstractJavaNode> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaNodesMetaInfo.class);
 
     // Picked from Java.jjt
     private static final String NODE_PACKAGE = "net.sourceforge.pmd.lang.java.ast";
     private static final String NODE_PREFIX = "AST";
     private static final String INVALID_CLASS_BASE_NAME = "void";
 
-    public SJNodesMetaInfo() {
+    public JavaNodesMetaInfo() {
         super(AbstractJavaNode.class);
     }
 

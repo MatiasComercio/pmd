@@ -22,28 +22,28 @@ import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclarator;
 import net.sourceforge.pmd.lang.java.ast.ASTResultType;
 import net.sourceforge.pmd.lang.java.ast.ASTVariableDeclaratorId;
 import net.sourceforge.pmd.lang.java.ast.AbstractJavaNode;
-import net.sourceforge.pmd.lang.java.fixes.meta.SJNodesMetaInfo;
+import net.sourceforge.pmd.lang.java.fixes.meta.JavaNodesMetaInfo;
 import net.sourceforge.pmd.lang.java.fixes.syntax.structure.element.ArraySE;
 import net.sourceforge.pmd.lang.java.fixes.syntax.structure.element.ImageSE;
 import net.sourceforge.pmd.lang.java.fixes.syntax.structure.element.ModifiersSE;
 import net.sourceforge.pmd.lang.syntax.AbstractNodesSyntax;
 
-public class SJNodesSyntax extends AbstractNodesSyntax<AbstractJavaNode> {
-    private static SJNodesSyntax instance;
+public class JavaNodesSyntax extends AbstractNodesSyntax<AbstractJavaNode> {
+    private static JavaNodesSyntax instance;
 
-    private SJNodesSyntax(final SJNodesMetaInfo nodesMetaInfo) {
+    private JavaNodesSyntax(final JavaNodesMetaInfo nodesMetaInfo) {
         super(nodesMetaInfo);
     }
 
-    private static SJNodesSyntax newInstance(final SJNodesMetaInfo nodesMetaInfo) {
-        final SJNodesSyntax sjNodesStructure = new SJNodesSyntax(nodesMetaInfo);
+    private static JavaNodesSyntax newInstance(final JavaNodesMetaInfo nodesMetaInfo) {
+        final JavaNodesSyntax sjNodesStructure = new JavaNodesSyntax(nodesMetaInfo);
         sjNodesStructure.defineAll();
         return sjNodesStructure;
     }
 
-    public static SJNodesSyntax getInstance() {
+    public static JavaNodesSyntax getInstance() {
         if (instance == null) {
-            instance = newInstance(new SJNodesMetaInfo());
+            instance = newInstance(new JavaNodesMetaInfo());
         }
         return instance;
     }
