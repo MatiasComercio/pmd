@@ -130,6 +130,8 @@ public abstract class AbstractJavaAccessNode extends AbstractJavaAnnotatableNode
         } else {
             this.modifiers &= ~mask;
         }
+        // Inform that we need to sync the modifier tokens (recall that our parent have them) before using them.
+        requireAbstractNode(parent).syncRequired();
     }
 
     public boolean isPackagePrivate() {

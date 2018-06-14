@@ -8,4 +8,7 @@ public interface Dimensionable {
     boolean isArray();
 
     int getArrayDepth();
+
+    void incrementArrayDepth();
+    void decrementArrayDepth();
 }
