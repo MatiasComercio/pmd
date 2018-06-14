@@ -63,8 +63,7 @@ public class JavaNodesSyntax extends AbstractNodesSyntax<AbstractJavaNode> {
     private void defineAll() {
         define(ASTClassOrInterfaceBodyDeclaration.class, modifiers(), child(ASTMethodDeclaration.class));
         define(ASTMethodDeclaration.class,
-            child(ASTResultType.class), child(ASTMethodDeclarator.class), COLON,
-            child(ASTLambdaExpression.class), SEMICOLON
+            child(ASTResultType.class), child(ASTMethodDeclarator.class), SEMICOLON
         );
         define(ASTFormalParameters.class,
             LPAREN,

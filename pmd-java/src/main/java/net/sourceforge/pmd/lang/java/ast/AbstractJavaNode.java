@@ -5,7 +5,9 @@
 package net.sourceforge.pmd.lang.java.ast;
 
 import net.sourceforge.pmd.lang.ast.AbstractNode;
+import net.sourceforge.pmd.lang.java.fixes.syntax.JavaNodesSyntax;
 import net.sourceforge.pmd.lang.symboltable.Scope;
+import net.sourceforge.pmd.lang.syntax.NodeSyntax;
 
 public abstract class AbstractJavaNode extends AbstractNode implements JavaNode {
 
@@ -83,5 +85,10 @@ public abstract class AbstractJavaNode extends AbstractNode implements JavaNode 
     @Override
     public final String getXPathNodeName() {
         return JavaParserTreeConstants.jjtNodeName[id];
+    }
+
+    @Override
+    protected NodeSyntax<? extends AbstractJavaNode> getNodeSyntax() {
+        return JavaNodesSyntax.getInstance().getNodeSyntax(this.getClass());
     }
 }

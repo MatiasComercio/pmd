@@ -10,6 +10,7 @@ import java.io.StringReader;
 import net.sourceforge.pmd.lang.ast.JavaCharStream;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceBodyDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.ast.ASTFormalParameters;
 import net.sourceforge.pmd.lang.java.ast.ASTLambdaExpression;
 import net.sourceforge.pmd.lang.java.ast.ASTMethodDeclaration;
@@ -33,11 +34,22 @@ public class Main {
 
     public static void main(String[] args) {
         testClassOrInterfaceBodyDeclaration();
-        testLambda();
+//        testLambda();
     }
 
     private static void testClassOrInterfaceBodyDeclaration() {
-        final ASTClassOrInterfaceBodyDeclaration rootNode = new CustomJavaParser<ASTClassOrInterfaceBodyDeclaration>(CLASS_OR_INTERFACE_BODY_DECLARATION).getNode();
+        final String s = "/**\n"
+            + " * BSD-style license; for more info see http://pmd.sourceforge.net/license.html\n"
+            + " */\n"
+            + "\n"
+            + "package samples;\n"
+            + "\n"
+            + "public abstract class JavaParserSample {\n"
+            + "    public abstract void sampleMethod(int i, boolean b,                       float f);\n"
+            + "}";
+        final ASTCompilationUnit cu = new JavaParser(new JavaCharStream(new StringReader(s))).CompilationUnit();
+        final ASTClassOrInterfaceBodyDeclaration rootNode = cu.getFirstDescendantOfType(ASTClassOrInterfaceBodyDeclaration.class);
+        // final ASTClassOrInterfaceBodyDeclaration rootNode = new CustomJavaParser<ASTClassOrInterfaceBodyDeclaration>(CLASS_OR_INTERFACE_BODY_DECLARATION).getNode();
         // Print the node's structure to easily search the indexes of the require nodes.
         rootNode.dump("> ");
         printSplitter();
